@@ -1,0 +1,32 @@
+package com.ia.backend.dto.accessory;
+
+import com.ia.backend.entity.enums.Category;
+import jakarta.validation.constraints.*;
+
+import java.math.BigDecimal;
+
+public record AccessoryRequest(
+
+        @NotBlank(message = "Title cannot be blank.")
+        @Size(max = 150, message = "Title must not exceed 150 characters.")
+        String title,
+
+        @NotBlank(message = "Description cannot be blank.")
+        @Size(max = 1000, message = "Description must not exceed 1000 characters.")
+        String description,
+
+        @NotNull(message = "Price cannot be null")
+        @Positive(message = "Price cannot be negative")
+        BigDecimal price,
+
+        @NotNull(message = "Stock cannot be null")
+        @PositiveOrZero(message = "Stock cannot be zero or negative")
+        int stock,
+
+        @NotNull(message = "Stock cannot be null")
+        Category category,
+
+        @NotBlank(message = "Product Code cannot be blank")
+        @Size(max = 10, message = "Product Code must not exceed 10 characters")
+        String productCode
+) {}
