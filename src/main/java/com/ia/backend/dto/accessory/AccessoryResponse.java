@@ -12,6 +12,7 @@ public record AccessoryResponse(
         BigDecimal price,
         int stock,
         Category category,
+        String productCode,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}
