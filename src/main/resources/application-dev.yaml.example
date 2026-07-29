@@ -6,6 +6,12 @@ application:
     name: your_openapi_name
     email: your_openapi_email
 
+  security:
+    jwt:
+      secret: your_256_bit_secret_key_here_at_least_32_characters_long
+      expiration-ms: your_jwt_expiration_ms
+      refresh-expiration-ms: your_jwt_refresh_expiration_ms
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/your_database_name

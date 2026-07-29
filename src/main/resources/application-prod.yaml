@@ -6,6 +6,12 @@ application:
     name: ${OPENAPI_NAME}
     email: ${OPENAPI_EMAIL}
 
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration-ms: ${JWT_EXPIRATION_MS}
+      refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
+
 spring:
   datasource:
     url: ${DATABASE_URL}
