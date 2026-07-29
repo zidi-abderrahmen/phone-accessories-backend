@@ -1,3 +1,11 @@
+application:
+  openapi:
+    title: ${OPENAPI_TITLE}
+    version: ${OPENAPI_VERSION}
+    description: ${OPENAPI_DESCRIPTION}
+    name: ${OPENAPI_NAME}
+    email: ${OPENAPI_EMAIL}
+
 spring:
   datasource:
     url: ${DATABASE_URL}

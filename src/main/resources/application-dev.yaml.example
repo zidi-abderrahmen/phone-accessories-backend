@@ -1,3 +1,11 @@
+application:
+  openapi:
+    title: your_openapi_title
+    version: your_openapi_version
+    description: your_openapi_description
+    name: your_openapi_name
+    email: your_openapi_email
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/your_database_name
