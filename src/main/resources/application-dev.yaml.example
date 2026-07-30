@@ -52,3 +52,6 @@ springdoc:
     enabled: true
   api-docs:
     enabled: true
+
+cors:
+  allowed-origins: your_frontend_url(s)
