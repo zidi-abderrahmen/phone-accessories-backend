@@ -12,6 +12,12 @@ application:
       expiration-ms: ${JWT_EXPIRATION_MS}
       refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
 
+  frontend:
+    url: ${FRONTEND_URL}
+
+  token:
+    pepper: ${TOKEN_PEPPER} # used to sign the refresh-token 'use SHA256 64-bit key for this'
+
 spring:
   datasource:
     url: ${DATABASE_URL}
@@ -32,3 +38,21 @@ spring:
         jdbc.batch_size: 25
         order_inserts: true
         order_updates: true
+
+  mail:
+    host: smtp.gmail.com        # or any other smtp server of your choice
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000

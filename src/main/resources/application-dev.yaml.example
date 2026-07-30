@@ -12,6 +12,12 @@ application:
       expiration-ms: your_jwt_expiration_ms
       refresh-expiration-ms: your_jwt_refresh_expiration_ms
 
+  frontend:
+    url: your_frontend_url
+
+  token:
+    pepper: your_pepper_token_sha_256_bit_secret_key_here_64_characters_long
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/your_database_name
@@ -22,3 +28,21 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME:your.email@gmail.com}
+    password: ${GMAIL_PASSWORD:your_app_password}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
