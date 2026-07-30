@@ -1,0 +1,26 @@
+package com.ia.backend.mapper;
+
+import com.ia.backend.dto.user.UserResponse;
+import com.ia.backend.entity.User;
+import com.ia.backend.entity.UserRole;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Mapper(componentModel = "spring")
+public interface AuthMapper {
+
+    @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
+    UserResponse toUserResponse(User user);
+
+    @Named("mapRoles")
+    default Set<String> mapRoles(Set<UserRole> roles) {
+        if (roles == null) return null;
+        return roles.stream()
+                .map(UserRole::getName)
+                .collect(Collectors.toSet());
+    }
+}
