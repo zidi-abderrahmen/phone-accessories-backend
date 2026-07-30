@@ -13,19 +13,19 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${application.openai.title}")
+    @Value("${application.openapi.title}")
     private String title;
 
-    @Value("${application.openai.description}")
+    @Value("${application.openapi.description}")
     private String description;
 
-    @Value("${application.openai.version}")
+    @Value("${application.openapi.version}")
     private String version;
 
-    @Value("${application.openai.email}")
+    @Value("${application.openapi.email}")
     private String email;
 
-    @Value("${application.openai.name}")
+    @Value("${application.openapi.name}")
     private String name;
 
     @Bean
