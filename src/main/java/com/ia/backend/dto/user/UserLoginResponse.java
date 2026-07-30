@@ -1,8 +1,9 @@
 package com.ia.backend.dto.user;
 
+import com.ia.backend.dto.reftoken.RefreshTokenResponse;
+
 public record UserLoginResponse(
 
-        String accessToken,
-        String refreshToken,
+        RefreshTokenResponse refreshToken,
         UserResponse user
 ) {}
