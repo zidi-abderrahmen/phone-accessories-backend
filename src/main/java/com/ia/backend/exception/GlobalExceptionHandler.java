@@ -2,6 +2,9 @@ package com.ia.backend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -35,5 +38,37 @@ public class GlobalExceptionHandler {
         body.put("timestamp", LocalDateTime.now());
         body.put("message", e.getMessage());
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Object> handleNotFoundException(NotFoundException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", e.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<Object> handleDisabledException(DisabledException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", e.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Object> handleBadCredentialsException(BadCredentialsException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", e.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Object> handleAuthenticationException(AuthenticationException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", e.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
     }
 }
