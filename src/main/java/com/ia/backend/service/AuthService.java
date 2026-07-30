@@ -6,6 +6,8 @@ import com.ia.backend.dto.user.UserLoginRequest;
 import com.ia.backend.dto.user.UserLoginResponse;
 import com.ia.backend.dto.user.UserRegisterRequest;
 import com.ia.backend.dto.user.UserResponse;
+import com.ia.backend.dto.verifemail.VerifyEmailRequest;
+import com.ia.backend.dto.verifemail.VerifyEmailResponse;
 import com.ia.backend.entity.EmailVerification;
 import com.ia.backend.entity.RefreshToken;
 import com.ia.backend.entity.User;
@@ -13,11 +15,14 @@ import com.ia.backend.entity.UserRole;
 import com.ia.backend.exception.AlreadyExistException;
 import com.ia.backend.exception.NotFoundException;
 import com.ia.backend.mapper.AuthMapper;
+import com.ia.backend.repository.EmailVerificationRepository;
 import com.ia.backend.repository.RefreshTokenRepository;
 import com.ia.backend.repository.UserRepository;
 import com.ia.backend.repository.UserRoleRepository;
 import com.ia.backend.util.JwtUtils;
+import com.ia.backend.util.TokenHasherUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,6 +45,12 @@ public class AuthService {
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final EmailService emailService;
+    private final EmailVerificationRepository emailVerificationRepository;
+    private final TokenHasherUtils tokenHasher;
+
+    @Value("${application.frontend.url}")
+    private String baseUrl;
 
     @Transactional
     public UserResponse register(UserRegisterRequest request) {
@@ -66,7 +77,12 @@ public class AuthService {
 
         newUser.setEmailVerification(emailVerification);
 
-        return authMapper.toUserResponse(userRepository.save(newUser));
+        User savedUser = userRepository.save(newUser);
+
+        String verificationLink = baseUrl + "/api/auth/verify?token=" + emailVerification.getToken();
+        emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getFirstName(), verificationLink);
+
+        return authMapper.toUserResponse(savedUser);
     }
 
     @Transactional
@@ -83,10 +99,11 @@ public class AuthService {
 
         String jwt = jwtUtils.generateTokenFromUsername(user.getEmail());
 
-        String refreshToken = UUID.randomUUID().toString();
+        String rawRefreshToken = UUID.randomUUID().toString();
+        String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
 
         RefreshToken refreshTokenEntity = RefreshToken.builder()
-                .token(refreshToken)
+                .token(hashedRefreshToken)
                 .user(user)
                 .expiresAt(LocalDateTime.now().plusDays(7))
                 .build();
@@ -95,7 +112,7 @@ public class AuthService {
 
         UserResponse userResponse = authMapper.toUserResponse(user);
 
-        return new UserLoginResponse(new RefreshTokenResponse(jwt, refreshToken), userResponse);
+        return new UserLoginResponse(new RefreshTokenResponse(jwt, rawRefreshToken), userResponse);
     }
 
     @Transactional
@@ -116,21 +133,57 @@ public class AuthService {
         }
 
         String jwt = jwtUtils.generateTokenFromUsername(user.getEmail());
-        String refreshToken = UUID.randomUUID().toString();
+        String rawRefreshToken = UUID.randomUUID().toString();
+        String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
 
         RefreshToken refreshTokenEntity = RefreshToken.builder()
-                .token(refreshToken)
+                .token(hashedRefreshToken)
                 .user(user)
                 .expiresAt(LocalDateTime.now().plusDays(7))
                 .build();
 
         refreshTokenRepository.save(refreshTokenEntity);
 
-        return new RefreshTokenResponse(jwt, refreshToken);
+        return new RefreshTokenResponse(jwt, rawRefreshToken);
     }
 
-    public void logout(RefreshTokenRequest request) {
-        refreshTokenRepository.findByToken(request.refreshToken())
-                .ifPresent(refreshTokenRepository::delete);
+    @Transactional
+    public VerifyEmailResponse verifyEmail(VerifyEmailRequest request) {
+        EmailVerification verification = emailVerificationRepository.findByToken(request.token())
+                .orElseThrow(() -> new BadCredentialsException("Invalid verification token."));
+
+        if (verification.getExpiresAt().isBefore(LocalDateTime.now())) {
+            emailVerificationRepository.delete(verification);
+            throw new BadCredentialsException("Verification token has expired.");
+        }
+
+        User user = verification.getUser();
+
+        if (user.isEnabled()) {
+            emailVerificationRepository.delete(verification);
+            throw new AlreadyExistException("Email already verified.");
+        }
+
+        user.setEnabled(true);
+
+        emailVerificationRepository.delete(verification);
+
+        return new VerifyEmailResponse("Email verified successfully.");
+    }
+
+    public void logout(RefreshTokenRequest request, String authorization) {
+        String hashedRefreshToken = tokenHasher.hash(request.refreshToken());
+
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
+                .orElseThrow(() -> new BadCredentialsException("Refresh token not found or has expired."));
+
+        String jwt = authorization.replace("Bearer ", "");
+        String userEmail = jwtUtils.getUsernameFromJwtToken(jwt);
+
+        if (!refreshToken.getUser().getEmail().equals(userEmail)) {
+            throw new BadCredentialsException("Unauthorized.");
+        }
+
+        refreshTokenRepository.delete(refreshToken);
     }
 }
