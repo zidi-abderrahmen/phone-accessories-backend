@@ -1,4 +1,4 @@
-package com.ia.backend.dto.verifemail;
+package com.ia.backend.dto.email;
 
 import jakarta.validation.constraints.NotBlank;
 

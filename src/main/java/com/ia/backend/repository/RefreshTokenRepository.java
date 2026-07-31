@@ -1,5 +1,6 @@
 package com.ia.backend.repository;
 
+import com.ia.backend.entity.EmailVerification;
 import com.ia.backend.entity.RefreshToken;
 import com.ia.backend.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
