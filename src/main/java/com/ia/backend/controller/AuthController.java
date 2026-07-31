@@ -1,13 +1,15 @@
 package com.ia.backend.controller;
 
+import com.ia.backend.dto.email.password.ForgotPasswordRequest;
+import com.ia.backend.dto.email.password.ResetPasswordRequest;
 import com.ia.backend.dto.reftoken.RefreshTokenRequest;
 import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
 import com.ia.backend.dto.user.UserLoginResponse;
 import com.ia.backend.dto.user.UserRegisterRequest;
 import com.ia.backend.dto.user.UserResponse;
-import com.ia.backend.dto.verifemail.VerifyEmailRequest;
-import com.ia.backend.dto.verifemail.VerifyEmailResponse;
+import com.ia.backend.dto.email.VerifyEmailRequest;
+import com.ia.backend.dto.email.EmailResponse;
 import com.ia.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +40,18 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<VerifyEmailResponse> verifyEmail(@ModelAttribute VerifyEmailRequest request) {
+    public ResponseEntity<EmailResponse> verifyEmail(@ModelAttribute VerifyEmailRequest request) {
         return ResponseEntity.ok(authService.verifyEmail(request));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<EmailResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.forgotPassword(request));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<EmailResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 
     @PostMapping("/logout")
