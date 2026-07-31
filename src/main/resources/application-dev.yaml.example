@@ -12,6 +12,9 @@ application:
       expiration-ms: your_jwt_expiration_ms
       refresh-expiration-ms: your_jwt_refresh_expiration_ms
 
+    cookies:
+      secure: false
+
   frontend:
     url: your_frontend_url
 
