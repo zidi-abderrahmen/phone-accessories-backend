@@ -4,6 +4,6 @@ import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 
 public record UserLoginResponse(
 
-        RefreshTokenResponse refreshToken,
+        RefreshTokenResponse tokens,
         UserResponse user
 ) {}
