@@ -1,24 +1,20 @@
 package com.ia.backend.service;
 
+import com.ia.backend.dto.email.password.ForgotPasswordRequest;
+import com.ia.backend.dto.email.password.ResetPasswordRequest;
 import com.ia.backend.dto.reftoken.RefreshTokenRequest;
 import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
 import com.ia.backend.dto.user.UserLoginResponse;
 import com.ia.backend.dto.user.UserRegisterRequest;
 import com.ia.backend.dto.user.UserResponse;
-import com.ia.backend.dto.verifemail.VerifyEmailRequest;
-import com.ia.backend.dto.verifemail.VerifyEmailResponse;
-import com.ia.backend.entity.EmailVerification;
-import com.ia.backend.entity.RefreshToken;
-import com.ia.backend.entity.User;
-import com.ia.backend.entity.UserRole;
+import com.ia.backend.dto.email.VerifyEmailRequest;
+import com.ia.backend.dto.email.EmailResponse;
+import com.ia.backend.entity.*;
 import com.ia.backend.exception.AlreadyExistException;
 import com.ia.backend.exception.NotFoundException;
 import com.ia.backend.mapper.AuthMapper;
-import com.ia.backend.repository.EmailVerificationRepository;
-import com.ia.backend.repository.RefreshTokenRepository;
-import com.ia.backend.repository.UserRepository;
-import com.ia.backend.repository.UserRoleRepository;
+import com.ia.backend.repository.*;
 import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +45,7 @@ public class AuthService {
     private final EmailService emailService;
     private final EmailVerificationRepository emailVerificationRepository;
     private final TokenHasherUtils tokenHasher;
+    private final ResetPasswordRepository resetPasswordRepository;
 
     @Value("${application.frontend.url}")
     private String baseUrl;
@@ -84,7 +81,7 @@ public class AuthService {
         User savedUser = userRepository.save(newUser);
 
         String verificationLink = baseUrl + "/verify?token=" + emailVerification.getToken();
-        emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getFirstName(), verificationLink);
+        emailService.sendEmail(savedUser.getEmail(), savedUser.getFirstName(), verificationLink, false);
 
         return authMapper.toUserResponse(savedUser);
     }
@@ -143,7 +140,7 @@ public class AuthService {
     }
 
     @Transactional
-    public VerifyEmailResponse verifyEmail(VerifyEmailRequest request) {
+    public EmailResponse verifyEmail(VerifyEmailRequest request) {
         EmailVerification verification = emailVerificationRepository.findByToken(request.token())
                 .orElseThrow(() -> new BadCredentialsException("Invalid verification token."));
 
@@ -163,7 +160,7 @@ public class AuthService {
 
         emailVerificationRepository.delete(verification);
 
-        return new VerifyEmailResponse("Email verified successfully.");
+        return new EmailResponse("Email verified successfully.");
     }
 
     public void logout(RefreshTokenRequest request, String authorization) {
@@ -180,5 +177,52 @@ public class AuthService {
         }
 
         refreshTokenRepository.delete(refreshToken);
+    }
+
+    @Transactional
+    public EmailResponse forgotPassword(ForgotPasswordRequest request) {
+        userRepository.findByEmail(request.email()).ifPresent(existingUser -> {
+            resetPasswordRepository.deleteAllByUser(existingUser);
+            resetPasswordRepository.flush();
+
+            String rawToken = UUID.randomUUID().toString();
+            String hashedToken = tokenHasher.hash(rawToken);
+
+            ResetPassword newResetPassword = ResetPassword.builder()
+                    .token(hashedToken)
+                    .user(existingUser)
+                    .expiresAt(LocalDateTime.now().plusMinutes(15))
+                    .build();
+
+            existingUser.setResetPassword(newResetPassword);
+            userRepository.save(existingUser);
+
+            String verificationLink = baseUrl + "/reset-password?token=" + rawToken;
+            emailService.sendEmail(existingUser.getEmail(), existingUser.getFirstName(), verificationLink, true);
+        });
+
+        return new EmailResponse("If an account exists with this email, a reset link has been sent.");
+    }
+
+    @Transactional
+    public EmailResponse resetPassword(ResetPasswordRequest request) {
+        String hashedToken = tokenHasher.hash(request.token());
+        ResetPassword resetPassword = resetPasswordRepository.findByToken(hashedToken)
+                .orElseThrow(() -> new BadCredentialsException("Invalid reset password token."));
+
+        if (resetPassword.getExpiresAt().isBefore(LocalDateTime.now())) {
+            resetPasswordRepository.delete(resetPassword);
+            throw new BadCredentialsException("Reset password token has expired.");
+        }
+
+        User existingUser = resetPassword.getUser();
+
+        existingUser.setPassword(passwordEncoder.encode(request.newPassword()));
+
+        userRepository.save(existingUser);
+
+        resetPasswordRepository.delete(resetPassword);
+
+        return new EmailResponse("Password reset successfully.");
     }
 }
