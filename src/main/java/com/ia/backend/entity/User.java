@@ -54,6 +54,9 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private EmailVerification emailVerification;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private ResetPassword resetPassword;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean deleted = false;
