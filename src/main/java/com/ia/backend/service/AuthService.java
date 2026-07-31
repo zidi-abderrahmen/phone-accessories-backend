@@ -22,7 +22,6 @@ import com.ia.backend.repository.UserRoleRepository;
 import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.logging.log4j.CloseableThreadContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -32,10 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
@@ -105,22 +101,9 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new NotFoundException("Authenticated user not found."));
 
-        String jwt = jwtUtils.generateTokenFromUsername(user.getEmail());
-
-        String rawRefreshToken = UUID.randomUUID().toString();
-        String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
-
-        RefreshToken refreshTokenEntity = RefreshToken.builder()
-                .token(hashedRefreshToken)
-                .user(user)
-                .expiresAt(LocalDateTime.now().plus(Duration.ofMillis(refreshExpirationMs)))
-                .build();
-
-        refreshTokenRepository.save(refreshTokenEntity);
-
         UserResponse userResponse = authMapper.toUserResponse(user);
 
-        return new UserLoginResponse(new RefreshTokenResponse(jwt, rawRefreshToken), userResponse);
+        return new UserLoginResponse(issueTokens(user), userResponse);
     }
 
     @Transactional
@@ -140,6 +123,10 @@ public class AuthService {
             throw new BadCredentialsException("Account is disabled.");
         }
 
+        return issueTokens(user);
+    }
+
+    private RefreshTokenResponse issueTokens(User user) {
         String jwt = jwtUtils.generateTokenFromUsername(user.getEmail());
         String rawRefreshToken = UUID.randomUUID().toString();
         String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
