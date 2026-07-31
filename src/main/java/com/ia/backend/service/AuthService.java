@@ -87,7 +87,7 @@ public class AuthService {
 
         User savedUser = userRepository.save(newUser);
 
-        String verificationLink = baseUrl + "/api/auth/verify?token=" + emailVerification.getToken();
+        String verificationLink = baseUrl + "/verify?token=" + emailVerification.getToken();
         emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getFirstName(), verificationLink);
 
         return authMapper.toUserResponse(savedUser);
