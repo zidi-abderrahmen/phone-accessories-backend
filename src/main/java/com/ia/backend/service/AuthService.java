@@ -163,20 +163,19 @@ public class AuthService {
         return new EmailResponse("Email verified successfully.");
     }
 
-    public void logout(RefreshTokenRequest request, String authorization) {
-        String hashedRefreshToken = tokenHasher.hash(request.refreshToken());
+    public void logout(String refreshToken, String accessToken) {
+        String hashedRefreshToken = tokenHasher.hash(refreshToken);
 
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
+        RefreshToken existingRefreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
                 .orElseThrow(() -> new BadCredentialsException("Refresh token not found or has expired."));
 
-        String jwt = authorization.replace("Bearer ", "");
-        String userEmail = jwtUtils.getUsernameFromJwtToken(jwt);
+        String userEmail = jwtUtils.getUsernameFromJwtToken(accessToken);
 
-        if (!refreshToken.getUser().getEmail().equals(userEmail)) {
+        if (!existingRefreshToken.getUser().getEmail().equals(userEmail)) {
             throw new BadCredentialsException("Unauthorized.");
         }
 
-        refreshTokenRepository.delete(refreshToken);
+        refreshTokenRepository.delete(existingRefreshToken);
     }
 
     @Transactional
