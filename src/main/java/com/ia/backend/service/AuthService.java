@@ -222,12 +222,13 @@ public class AuthService {
         }
 
         User existingUser = resetPassword.getUser();
-
         existingUser.setPassword(passwordEncoder.encode(request.newPassword()));
 
-        userRepository.save(existingUser);
+        existingUser.setResetPassword(null);
 
+        userRepository.save(existingUser);
         resetPasswordRepository.delete(resetPassword);
+        resetPasswordRepository.flush();
 
         return new EmailResponse("Password reset successfully.");
     }
