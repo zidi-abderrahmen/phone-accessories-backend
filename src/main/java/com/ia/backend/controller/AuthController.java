@@ -2,6 +2,7 @@ package com.ia.backend.controller;
 
 import com.ia.backend.dto.email.password.ForgotPasswordRequest;
 import com.ia.backend.dto.email.password.ResetPasswordRequest;
+import com.ia.backend.dto.me.MeResponse;
 import com.ia.backend.dto.reftoken.RefreshTokenRequest;
 import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
@@ -104,6 +105,11 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<EmailResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(authService.resetPassword(request));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<MeResponse> getCurrentUser() {
+        return ResponseEntity.ok(authService.getMe());
     }
 
     @PostMapping("/logout")
