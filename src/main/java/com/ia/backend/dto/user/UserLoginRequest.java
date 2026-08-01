@@ -18,5 +18,7 @@ public record UserLoginRequest(
                 regexp = "^(?=.*[A-Z])(?=.*[0-9]).*$",
                 message = "Password must contain at least one uppercase letter and one number"
         )
-        String password
+        String password,
+
+        boolean rememberMe
 ) {}
