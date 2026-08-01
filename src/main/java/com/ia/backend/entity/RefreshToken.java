@@ -25,6 +25,10 @@ public class RefreshToken {
     @JoinColumn(nullable = false, name = "user_id")
     private User user;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean rememberMe = false;
+
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 }
