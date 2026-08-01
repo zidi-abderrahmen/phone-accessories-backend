@@ -2,6 +2,7 @@ package com.ia.backend.service;
 
 import com.ia.backend.dto.email.password.ForgotPasswordRequest;
 import com.ia.backend.dto.email.password.ResetPasswordRequest;
+import com.ia.backend.dto.me.MeResponse;
 import com.ia.backend.dto.reftoken.RefreshTokenRequest;
 import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
@@ -18,10 +19,15 @@ import com.ia.backend.repository.*;
 import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +36,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -223,5 +230,43 @@ public class AuthService {
         resetPasswordRepository.delete(resetPassword);
 
         return new EmailResponse("Password reset successfully.");
+    }
+
+    public MeResponse getMe() {
+        UserDetails userDetails = getUserDetails();
+
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Set<String> roles = user.getRoles()
+                .stream()
+                .map(UserRole::getName)
+                .collect(Collectors.toSet());
+
+        return new MeResponse(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                roles,
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
+    }
+
+    private static @NonNull UserDetails getUserDetails() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            throw new BadCredentialsException("User is not authenticated.");
+        }
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+        if (userDetails == null) {
+            throw new UsernameNotFoundException("User details not found");
+        }
+        return userDetails;
     }
 }
