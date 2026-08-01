@@ -164,6 +164,7 @@ public class AuthController {
         refreshCookie.setSecure(true);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(refreshExpirationMs / 1000);
+        accessCookie.setAttribute("SameSite", "Strict");
         response.addCookie(refreshCookie);
     }
 }

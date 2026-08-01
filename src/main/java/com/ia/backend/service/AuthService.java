@@ -18,6 +18,8 @@ import com.ia.backend.mapper.AuthMapper;
 import com.ia.backend.repository.*;
 import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,7 +60,10 @@ public class AuthService {
     private String baseUrl;
 
     @Value("${application.security.jwt.refresh-expiration-ms}")
-    private int refreshExpirationMs;
+    private long refreshExpirationMs;
+
+    @Value("${application.security.jwt.remember-me-expiration-ms}")
+    private long rememberMeExpirationMs;
 
     @Transactional
     public UserResponse register(UserRegisterRequest request) {
@@ -107,13 +112,16 @@ public class AuthService {
 
         UserResponse userResponse = authMapper.toUserResponse(user);
 
-        return new UserLoginResponse(issueTokens(user), userResponse);
+        return new UserLoginResponse(issueTokens(user, request.rememberMe()), userResponse);
     }
 
     @Transactional
     public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
-        RefreshToken existedRefreshToken = refreshTokenRepository.findByToken(request.refreshToken())
+        String hashedRefreshToken = tokenHasher.hash(request.refreshToken());
+        RefreshToken existedRefreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
                 .orElseThrow(() -> new BadCredentialsException("Refresh token not found or has expired."));
+
+        boolean rememberMe = existedRefreshToken.isRememberMe();
 
         refreshTokenRepository.delete(existedRefreshToken);
 
@@ -127,18 +135,21 @@ public class AuthService {
             throw new BadCredentialsException("Account is disabled.");
         }
 
-        return issueTokens(user);
+        return issueTokens(user, rememberMe);
     }
 
-    private RefreshTokenResponse issueTokens(User user) {
+    private RefreshTokenResponse issueTokens(User user, boolean rememberMe) {
         String jwt = jwtUtils.generateTokenFromUsername(user.getEmail());
         String rawRefreshToken = UUID.randomUUID().toString();
         String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
 
+        long expirationMs = rememberMe ? rememberMeExpirationMs : refreshExpirationMs;
+
         RefreshToken refreshTokenEntity = RefreshToken.builder()
                 .token(hashedRefreshToken)
                 .user(user)
-                .expiresAt(LocalDateTime.now().plus(Duration.ofMillis(refreshExpirationMs)))
+                .rememberMe(rememberMe)
+                .expiresAt(LocalDateTime.now().plus(Duration.ofMillis(expirationMs)))
                 .build();
 
         refreshTokenRepository.save(refreshTokenEntity);
