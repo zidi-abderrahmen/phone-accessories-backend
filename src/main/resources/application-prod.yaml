@@ -11,6 +11,7 @@ application:
       secret: ${JWT_SECRET}
       expiration-ms: ${JWT_EXPIRATION_MS}
       refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
+      remember-me-expiration-ms: ${JWT_REMEMBER_ME_EXPIRATION_MS}
 
     cookies:
       secure: ${COOKIES_SECURE}
