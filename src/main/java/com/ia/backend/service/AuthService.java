@@ -3,7 +3,6 @@ package com.ia.backend.service;
 import com.ia.backend.dto.email.password.ForgotPasswordRequest;
 import com.ia.backend.dto.email.password.ResetPasswordRequest;
 import com.ia.backend.dto.me.MeResponse;
-import com.ia.backend.dto.reftoken.RefreshTokenRequest;
 import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
 import com.ia.backend.dto.user.UserLoginResponse;
@@ -18,8 +17,6 @@ import com.ia.backend.mapper.AuthMapper;
 import com.ia.backend.repository.*;
 import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -116,18 +113,18 @@ public class AuthService {
     }
 
     @Transactional
-    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
-        String hashedRefreshToken = tokenHasher.hash(request.refreshToken());
+    public RefreshTokenResponse refreshToken(String rawRefreshToken) {
+        String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
         RefreshToken existedRefreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
                 .orElseThrow(() -> new BadCredentialsException("Refresh token not found or has expired."));
 
         boolean rememberMe = existedRefreshToken.isRememberMe();
 
-        refreshTokenRepository.delete(existedRefreshToken);
-
         if (existedRefreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            refreshTokenRepository.delete(existedRefreshToken);
             throw new BadCredentialsException("Refresh token not found or has expired.");
         }
+        refreshTokenRepository.delete(existedRefreshToken);
 
         User user = existedRefreshToken.getUser();
 
@@ -154,7 +151,7 @@ public class AuthService {
 
         refreshTokenRepository.save(refreshTokenEntity);
 
-        return new RefreshTokenResponse(jwt, rawRefreshToken);
+        return new RefreshTokenResponse(jwt, rawRefreshToken, rememberMe);
     }
 
     @Transactional
