@@ -3,7 +3,6 @@ package com.ia.backend.controller;
 import com.ia.backend.dto.email.password.ForgotPasswordRequest;
 import com.ia.backend.dto.email.password.ResetPasswordRequest;
 import com.ia.backend.dto.me.MeResponse;
-import com.ia.backend.dto.reftoken.RefreshTokenRequest;
 import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
 import com.ia.backend.dto.user.UserLoginResponse;
@@ -34,7 +33,10 @@ public class AuthController {
     private int expirationJwt;
 
     @Value("${application.security.jwt.refresh-expiration-ms}")
-    private int refreshExpirationMs;
+    private long refreshExpirationMs;
+
+    @Value("${application.security.jwt.remember-me-expiration-ms}")
+    private long rememberMeExpirationMs;
 
     @Value("${application.security.cookie.secure:false}")
     private boolean cookieSecure;
@@ -54,7 +56,8 @@ public class AuthController {
         generateCookies(
                 userLoginResponse.tokens().accessToken(),
                 userLoginResponse.tokens().refreshToken(),
-                response
+                response,
+                request.rememberMe()
         );
 
         return ResponseEntity.ok(userLoginResponse);
@@ -80,13 +83,14 @@ public class AuthController {
         }
 
         RefreshTokenResponse refreshResponse = authService.refreshToken(
-                new RefreshTokenRequest(refreshToken)
+                refreshToken
         );
 
         generateCookies(
                 refreshResponse.accessToken(),
                 refreshResponse.refreshToken(),
-                response
+                response,
+                refreshResponse.rememberMe()
         );
 
         return ResponseEntity.ok(refreshResponse);
@@ -148,7 +152,7 @@ public class AuthController {
         response.addCookie(cookie);
     }
 
-    private void generateCookies(String accessToken, String refreshToken, HttpServletResponse response) {
+    private void generateCookies(String accessToken, String refreshToken, HttpServletResponse response, boolean rememberMe) {
         Cookie accessCookie = new Cookie("jwt_token",
                 accessToken);
         accessCookie.setHttpOnly(true);
@@ -158,13 +162,15 @@ public class AuthController {
         accessCookie.setAttribute("SameSite", "Strict");
         response.addCookie(accessCookie);
 
+        int rememberMeMaxAge = rememberMe ? (int) (rememberMeExpirationMs / 1000) : (int) (refreshExpirationMs / 1000);
+
         Cookie refreshCookie = new Cookie("refresh_token",
                 refreshToken);
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true);
+        refreshCookie.setSecure(cookieSecure);
         refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(refreshExpirationMs / 1000);
-        accessCookie.setAttribute("SameSite", "Strict");
+        refreshCookie.setMaxAge(rememberMeMaxAge);
+        refreshCookie.setAttribute("SameSite", "Strict");
         response.addCookie(refreshCookie);
     }
 }
