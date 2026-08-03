@@ -120,11 +120,10 @@ public class AuthService {
     @Transactional
     public EmailResponse verifyEmail(VerifyEmailRequest request) {
         log.info("Verifying email with token: {}", request.token());
-        EmailVerification verification = emailVerificationRepository.findByToken(request.token())
-                .orElseThrow(() -> new NotFoundException("Invalid verification token."));
+        String hashedToken = tokenHasher.hash(request.token());
 
-        log.info("Deleting verification token: {}", request.token());
-        emailVerificationRepository.delete(verification);
+        EmailVerification verification = emailVerificationRepository.findByToken(hashedToken)
+                .orElseThrow(() -> new NotFoundException("Invalid verification token."));
 
         if (verification.getExpiresAt().isBefore(LocalDateTime.now())) {
             log.error("Verification token has expired.");
@@ -132,13 +131,13 @@ public class AuthService {
         }
 
         User user = verification.getUser();
-
         if (user.isEnabled()) {
             log.error("Email already verified.");
             throw new AlreadyExistException("Email already verified.");
         }
 
         user.setEnabled(true);
+        user.setEmailVerification(null);
         userRepository.save(user);
 
         log.info("Email verified successfully.");
