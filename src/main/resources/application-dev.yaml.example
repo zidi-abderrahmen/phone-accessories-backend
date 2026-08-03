@@ -13,6 +13,12 @@ application:
       refresh-expiration-ms: your_jwt_refresh_expiration_ms
       remember-me-expiration-ms: your_jwt_remember_me_expiration_ms
 
+  super_admin:
+      first_name: your_super_admin_first_name
+      last_name: your_super_admin_last_name
+      email: your_super_admin_email
+      password: your_super_admin_password
+
     cookies:
       secure: false
 

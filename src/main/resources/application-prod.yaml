@@ -16,6 +16,12 @@ application:
     cookies:
       secure: ${COOKIES_SECURE}
 
+  super_admin:
+    first_name: ${SUPER_ADMIN_FIRST_NAME}
+    last_name: ${SUPER_ADMIN_LAST_NAME}
+    email: ${SUPER_ADMIN_EMAIL}
+    password: ${SUPER_ADMIN_PASSWORD}
+
   frontend:
     url: ${FRONTEND_URL}
 
