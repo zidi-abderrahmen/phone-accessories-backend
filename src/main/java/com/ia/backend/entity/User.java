@@ -35,7 +35,7 @@ public class User {
     private String password;
 
     @Builder.Default
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "users_roles_mapping",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -72,6 +72,5 @@ public class User {
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
-
 
 }
