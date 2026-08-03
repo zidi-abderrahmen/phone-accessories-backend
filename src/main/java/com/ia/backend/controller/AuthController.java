@@ -40,7 +40,7 @@ public class AuthController {
     @Value("${application.security.jwt.remember-me-expiration-ms}")
     private long rememberMeExpirationMs;
 
-    @Value("${application.security.cookie.secure:false}")
+    @Value("${application.security.cookie.secure}")
     private boolean cookieSecure;
 
     @PostMapping("/register")
@@ -148,7 +148,7 @@ public class AuthController {
     private void clearCookie(HttpServletResponse response, String name) {
         Cookie cookie = new Cookie(name, null);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(0);
         response.addCookie(cookie);
