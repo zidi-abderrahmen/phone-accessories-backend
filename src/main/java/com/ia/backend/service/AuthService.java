@@ -19,6 +19,7 @@ import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
 import com.ia.backend.util.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,6 +39,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -61,37 +63,45 @@ public class AuthService {
     @Transactional
     public UserResponse register(UserRegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
+            log.error("Email already exists.");
             throw new AlreadyExistException("Email already exists.");
         }
 
         UserRole userRole = userRoleRepository.findByName("USER")
-                .orElseThrow(() -> new NotFoundException("User role not found."));
+                .orElseThrow(() -> {
+                    log.error("User role not found.");
+                    return new NotFoundException("User role not found.");
+                });
 
-        User newUser = User.builder()
-                .firstName(request.firstName())
-                .lastName(request.lastName())
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .roles(Set.of(userRole))
-                .build();
+        User newUser = authMapper.toUser(request);
+        newUser.setRoles(Set.of(userRole));
+        newUser.setPassword(passwordEncoder.encode(request.password()));
 
+        String rawToken = UUID.randomUUID().toString();
         EmailVerification emailVerification = EmailVerification.builder()
-                .token(UUID.randomUUID().toString())
+                .token(tokenHasher.hash(rawToken))
                 .user(newUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(15))
                 .build();
 
         newUser.setEmailVerification(emailVerification);
 
+        log.info("Saving user: {}", newUser);
         User savedUser = userRepository.save(newUser);
 
-        String verificationLink = baseUrl + "/verify-email?token=" + emailVerification.getToken();
-        emailService.sendEmail(savedUser.getEmail(), savedUser.getFirstName(), verificationLink, false);
+        String verificationLink = baseUrl + "/verify-email?token=" + rawToken;
+        emailService.sendEmail(
+                savedUser.getEmail(),
+                (savedUser.getFirstName() + " " + savedUser.getLastName()),
+                verificationLink,
+                false);
 
+        log.info("Email sent successfully.");
         return authMapper.toUserResponse(savedUser);
     }
 
     public UserLoginResponse login(UserLoginRequest request) {
+        log.info("Logging in user with email: {}", request.email());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.email(),
@@ -103,51 +113,61 @@ public class AuthService {
 
         UserResponse userResponse = authMapper.toUserResponse(user);
 
+        log.info("User logged in successfully.");
         return new UserLoginResponse(tokenService.issueTokens(user, request.rememberMe()), userResponse);
     }
 
     @Transactional
     public EmailResponse verifyEmail(VerifyEmailRequest request) {
+        log.info("Verifying email with token: {}", request.token());
         EmailVerification verification = emailVerificationRepository.findByToken(request.token())
                 .orElseThrow(() -> new NotFoundException("Invalid verification token."));
 
+        log.info("Deleting verification token: {}", request.token());
+        emailVerificationRepository.delete(verification);
+
         if (verification.getExpiresAt().isBefore(LocalDateTime.now())) {
-            emailVerificationRepository.delete(verification);
+            log.error("Verification token has expired.");
             throw new ExpiredException("Verification token has expired.");
         }
 
         User user = verification.getUser();
 
         if (user.isEnabled()) {
-            emailVerificationRepository.delete(verification);
+            log.error("Email already verified.");
             throw new AlreadyExistException("Email already verified.");
         }
 
         user.setEnabled(true);
+        userRepository.save(user);
 
-        emailVerificationRepository.delete(verification);
-
+        log.info("Email verified successfully.");
         return new EmailResponse("Email verified successfully.");
     }
 
     public void logout(String refreshToken, String accessToken) {
         String hashedRefreshToken = tokenHasher.hash(refreshToken);
 
+        log.info("Logging out user with hashed refresh token: {}", hashedRefreshToken);
         RefreshToken existingRefreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
                 .orElseThrow(() -> new BadCredentialsException("Refresh token not found or has expired."));
 
         String userEmail = jwtUtils.getUsernameFromJwtToken(accessToken);
 
         if (!existingRefreshToken.getUser().getEmail().equals(userEmail)) {
+            log.error("Unauthorized access attempt.");
             throw new BadCredentialsException("Unauthorized.");
         }
 
+        log.info("Refresh token found and user is authorized. Deleting refresh token.");
         refreshTokenRepository.delete(existingRefreshToken);
     }
 
     @Transactional
     public EmailResponse forgotPassword(ForgotPasswordRequest request) {
+        log.info("Forgot password request received for email: {}", request.email());
         userRepository.findByEmail(request.email()).ifPresent(existingUser -> {
+            log.info("User found with email: {}", existingUser.getEmail());
             resetPasswordRepository.deleteAllByUser(existingUser);
             resetPasswordRepository.flush();
 
@@ -160,24 +180,35 @@ public class AuthService {
                     .expiresAt(LocalDateTime.now().plusMinutes(15))
                     .build();
 
+            log.info("Saving reset password: {}", newResetPassword);
             existingUser.setResetPassword(newResetPassword);
             userRepository.save(existingUser);
 
             String verificationLink = baseUrl + "/reset-password?token=" + rawToken;
-            emailService.sendEmail(existingUser.getEmail(), existingUser.getFirstName(), verificationLink, true);
+            emailService.sendEmail(
+                    existingUser.getEmail(),
+                    (existingUser.getFirstName() + " " + existingUser.getLastName()),
+                    verificationLink,
+                    true);
+            log.info("Reset password email sent successfully.");
         });
+
 
         return new EmailResponse("If an account exists with this email, a reset link has been sent.");
     }
 
     @Transactional
     public EmailResponse resetPassword(ResetPasswordRequest request) {
+        log.info("Resetting password for user with token: {}", request.token());
         String hashedToken = tokenHasher.hash(request.token());
         ResetPassword resetPassword = resetPasswordRepository.findByToken(hashedToken)
                 .orElseThrow(() -> new BadCredentialsException("Invalid reset password token."));
 
+        log.info("Deleting reset password token: {}", request.token());
+        resetPasswordRepository.delete(resetPassword);
+
         if (resetPassword.getExpiresAt().isBefore(LocalDateTime.now())) {
-            resetPasswordRepository.delete(resetPassword);
+            log.error("Reset password token has expired.");
             throw new BadCredentialsException("Reset password token has expired.");
         }
 
@@ -186,24 +217,30 @@ public class AuthService {
 
         existingUser.setResetPassword(null);
 
+        log.info("Resetting password for user: {}", existingUser.getEmail());
         userRepository.save(existingUser);
-        resetPasswordRepository.delete(resetPassword);
         resetPasswordRepository.flush();
 
+        log.info("Password reset successfully.");
         return new EmailResponse("Password reset successfully.");
     }
 
     public MeResponse getMe() {
         UserDetails userDetails = getUserDetails();
 
+        log.info("Getting user details for user: {}", userDetails.getUsername());
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> {
+                    log.error("User not found");
+                    return new UsernameNotFoundException("User not found");
+                });
 
         Set<String> roles = user.getRoles()
                 .stream()
                 .map(UserRole::getName)
                 .collect(Collectors.toSet());
 
+        log.info("User details retrieved successfully.");
         return new MeResponse(
                 user.getId(),
                 user.getFirstName(),
@@ -216,18 +253,23 @@ public class AuthService {
     }
 
     private static @NonNull UserDetails getUserDetails() {
+        log.info("Getting user details from security context.");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()
                 || "anonymousUser".equals(authentication.getPrincipal())) {
+            log.error("User is not authenticated.");
             throw new BadCredentialsException("User is not authenticated.");
         }
 
+        log.info("User is authenticated.");
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
         if (userDetails == null) {
+            log.error("User details not found.");
             throw new UsernameNotFoundException("User details not found");
         }
+
         return userDetails;
     }
 }

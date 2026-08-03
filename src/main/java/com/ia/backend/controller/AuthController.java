@@ -98,8 +98,8 @@ public class AuthController {
         return ResponseEntity.ok(refreshResponse);
     }
 
-    @GetMapping("/verify-email")
-    public ResponseEntity<EmailResponse> verifyEmail(@ModelAttribute VerifyEmailRequest request) {
+    @PostMapping("/verify-email")
+    public ResponseEntity<EmailResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         return ResponseEntity.ok(authService.verifyEmail(request));
     }
 
