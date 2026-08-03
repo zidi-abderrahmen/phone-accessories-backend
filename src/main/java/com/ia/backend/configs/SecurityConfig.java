@@ -42,7 +42,7 @@ public class SecurityConfig {
                         "/api/auth/login", "/auth/login",
                         "/api/auth/register", "/auth/register",
                         "/api/auth/refresh-token", "/auth/refresh-token",
-                        "/api/auth/verify", "/auth/verify",
+                        "/api/auth/verify-email", "/auth/verify-email",
                         "/api/auth/forgot-password", "/auth/forgot-password",
                         "/api/auth/reset-password", "/auth/reset-password",
                         "/error"
