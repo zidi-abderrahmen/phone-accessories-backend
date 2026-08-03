@@ -109,7 +109,10 @@ public class AuthService {
                 )
         );
 
-        User user = ((UserPrincipal) Objects.requireNonNull(authentication.getPrincipal())).user();
+        UserPrincipal principal = (UserPrincipal) Objects.requireNonNull(authentication.getPrincipal());
+
+        User user = userRepository.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new NotFoundException("User not found with email: " + principal.getUsername()));
 
         UserResponse userResponse = authMapper.toUserResponse(user);
 
