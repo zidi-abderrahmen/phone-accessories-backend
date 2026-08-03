@@ -3,7 +3,6 @@ package com.ia.backend.service;
 import com.ia.backend.dto.email.password.ForgotPasswordRequest;
 import com.ia.backend.dto.email.password.ResetPasswordRequest;
 import com.ia.backend.dto.me.MeResponse;
-import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
 import com.ia.backend.dto.user.UserLoginResponse;
 import com.ia.backend.dto.user.UserRegisterRequest;
@@ -17,6 +16,7 @@ import com.ia.backend.mapper.AuthMapper;
 import com.ia.backend.repository.*;
 import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
+import com.ia.backend.util.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,8 +31,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -52,15 +52,10 @@ public class AuthService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final TokenHasherUtils tokenHasher;
     private final ResetPasswordRepository resetPasswordRepository;
+    private final TokenService tokenService;
 
     @Value("${application.frontend.url}")
     private String baseUrl;
-
-    @Value("${application.security.jwt.refresh-expiration-ms}")
-    private long refreshExpirationMs;
-
-    @Value("${application.security.jwt.remember-me-expiration-ms}")
-    private long rememberMeExpirationMs;
 
     @Transactional
     public UserResponse register(UserRegisterRequest request) {
@@ -95,63 +90,19 @@ public class AuthService {
         return authMapper.toUserResponse(savedUser);
     }
 
-    @Transactional
     public UserLoginResponse login(UserLoginRequest request) {
-        authenticationManager.authenticate(
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.email(),
                         request.password()
                 )
         );
 
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new NotFoundException("Authenticated user not found."));
+        User user = ((UserPrincipal) Objects.requireNonNull(authentication.getPrincipal())).user();
 
         UserResponse userResponse = authMapper.toUserResponse(user);
 
-        return new UserLoginResponse(issueTokens(user, request.rememberMe()), userResponse);
-    }
-
-    @Transactional
-    public RefreshTokenResponse refreshToken(String rawRefreshToken) {
-        String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
-        RefreshToken existedRefreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
-                .orElseThrow(() -> new BadCredentialsException("Refresh token not found or has expired."));
-
-        boolean rememberMe = existedRefreshToken.isRememberMe();
-
-        if (existedRefreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            refreshTokenRepository.delete(existedRefreshToken);
-            throw new BadCredentialsException("Refresh token not found or has expired.");
-        }
-        refreshTokenRepository.delete(existedRefreshToken);
-
-        User user = existedRefreshToken.getUser();
-
-        if (!user.isEnabled()) {
-            throw new BadCredentialsException("Account is disabled.");
-        }
-
-        return issueTokens(user, rememberMe);
-    }
-
-    private RefreshTokenResponse issueTokens(User user, boolean rememberMe) {
-        String jwt = jwtUtils.generateTokenFromUsername(user.getEmail());
-        String rawRefreshToken = UUID.randomUUID().toString();
-        String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
-
-        long expirationMs = rememberMe ? rememberMeExpirationMs : refreshExpirationMs;
-
-        RefreshToken refreshTokenEntity = RefreshToken.builder()
-                .token(hashedRefreshToken)
-                .user(user)
-                .rememberMe(rememberMe)
-                .expiresAt(LocalDateTime.now().plus(Duration.ofMillis(expirationMs)))
-                .build();
-
-        refreshTokenRepository.save(refreshTokenEntity);
-
-        return new RefreshTokenResponse(jwt, rawRefreshToken, rememberMe);
+        return new UserLoginResponse(tokenService.issueTokens(user, request.rememberMe()), userResponse);
     }
 
     @Transactional

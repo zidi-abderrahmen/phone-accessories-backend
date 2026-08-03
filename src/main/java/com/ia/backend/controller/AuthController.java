@@ -11,6 +11,7 @@ import com.ia.backend.dto.user.UserResponse;
 import com.ia.backend.dto.email.VerifyEmailRequest;
 import com.ia.backend.dto.email.EmailResponse;
 import com.ia.backend.service.AuthService;
+import com.ia.backend.service.TokenService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenService tokenService;
 
     @Value("${application.security.jwt.expiration-ms}")
     private int expirationJwt;
@@ -82,7 +84,7 @@ public class AuthController {
             throw new BadCredentialsException("Refresh token not found");
         }
 
-        RefreshTokenResponse refreshResponse = authService.refreshToken(
+        RefreshTokenResponse refreshResponse = tokenService.refreshToken(
                 refreshToken
         );
 
