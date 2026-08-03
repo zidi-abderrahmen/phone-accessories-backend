@@ -24,14 +24,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errors);
     }
 
-    @ExceptionHandler(AccessoryNotFoundException.class)
-    public ResponseEntity<Object> handleAccessoryNotFoundException(AccessoryNotFoundException e) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("message", e.getMessage());
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
-    }
-
     @ExceptionHandler(AlreadyExistException.class)
     public ResponseEntity<Object> handleAlreadyExistsException(AlreadyExistException e) {
         Map<String, Object> body = new HashMap<>();
@@ -70,5 +62,21 @@ public class GlobalExceptionHandler {
         body.put("timestamp", LocalDateTime.now());
         body.put("message", e.getMessage());
         return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(ExpiredException.class)
+    public ResponseEntity<Object> handleExpiredException(ExpiredException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", e.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(AlreadyVerifiedException.class)
+    public ResponseEntity<Object> handleAlreadyVerifiedException(AlreadyVerifiedException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", e.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 }
