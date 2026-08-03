@@ -11,6 +11,7 @@ import com.ia.backend.dto.email.VerifyEmailRequest;
 import com.ia.backend.dto.email.EmailResponse;
 import com.ia.backend.entity.*;
 import com.ia.backend.exception.AlreadyExistException;
+import com.ia.backend.exception.ExpiredException;
 import com.ia.backend.exception.NotFoundException;
 import com.ia.backend.mapper.AuthMapper;
 import com.ia.backend.repository.*;
@@ -84,7 +85,7 @@ public class AuthService {
 
         User savedUser = userRepository.save(newUser);
 
-        String verificationLink = baseUrl + "/verify?token=" + emailVerification.getToken();
+        String verificationLink = baseUrl + "/verify-email?token=" + emailVerification.getToken();
         emailService.sendEmail(savedUser.getEmail(), savedUser.getFirstName(), verificationLink, false);
 
         return authMapper.toUserResponse(savedUser);
@@ -108,11 +109,11 @@ public class AuthService {
     @Transactional
     public EmailResponse verifyEmail(VerifyEmailRequest request) {
         EmailVerification verification = emailVerificationRepository.findByToken(request.token())
-                .orElseThrow(() -> new BadCredentialsException("Invalid verification token."));
+                .orElseThrow(() -> new NotFoundException("Invalid verification token."));
 
         if (verification.getExpiresAt().isBefore(LocalDateTime.now())) {
             emailVerificationRepository.delete(verification);
-            throw new BadCredentialsException("Verification token has expired.");
+            throw new ExpiredException("Verification token has expired.");
         }
 
         User user = verification.getUser();

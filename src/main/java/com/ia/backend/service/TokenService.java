@@ -3,6 +3,8 @@ package com.ia.backend.service;
 import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.entity.RefreshToken;
 import com.ia.backend.entity.User;
+import com.ia.backend.exception.ExpiredException;
+import com.ia.backend.exception.NotFoundException;
 import com.ia.backend.repository.RefreshTokenRepository;
 import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
@@ -54,7 +56,7 @@ public class TokenService {
     public RefreshTokenResponse refreshToken(String rawRefreshToken) {
         String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
         RefreshToken existedRefreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
-                .orElseThrow(() -> new BadCredentialsException("Refresh token not found or has expired."));
+                .orElseThrow(() -> new NotFoundException("Refresh token not found or has expired."));
 
         boolean rememberMe = existedRefreshToken.isRememberMe();
         User user = existedRefreshToken.getUser();
@@ -62,7 +64,7 @@ public class TokenService {
         refreshTokenRepository.delete(existedRefreshToken);
 
         if (existedRefreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BadCredentialsException("Refresh token not found or has expired.");
+            throw new ExpiredException("Refresh token not found or has expired.");
         }
 
         if (!user.isEnabled()) {
