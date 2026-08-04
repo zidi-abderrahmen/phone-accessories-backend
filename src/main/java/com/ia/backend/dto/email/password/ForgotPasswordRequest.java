@@ -1,0 +1,13 @@
+package com.ia.backend.dto.email.password;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record ForgotPasswordRequest(
+
+        @NotBlank(message = "Email cannot be blank.")
+        @Email(message = "Invalid email format.")
+        @Size(max = 150, message = "Email must not exceed 150 characters.")
+        String email
+) {}

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,16 +30,19 @@ public class AccessoryController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<AccessoryResponse> createAccessory(@Valid @RequestBody AccessoryRequest accessoryRequest) {
         return ResponseEntity.status(HttpStatus.CREATED).body(accessoryService.createAccessory(accessoryRequest));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<AccessoryResponse> updateAccessory(@PathVariable Long id, @Valid @RequestBody AccessoryRequest accessoryRequest) {
         return ResponseEntity.ok(accessoryService.updateAccessory(id, accessoryRequest));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> deleteAccessory(@PathVariable Long id) {
         accessoryService.deleteAccessory(id);
         return ResponseEntity.noContent().build();

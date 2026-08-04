@@ -3,8 +3,8 @@ package com.ia.backend.service;
 import com.ia.backend.dto.accessory.AccessoryRequest;
 import com.ia.backend.dto.accessory.AccessoryResponse;
 import com.ia.backend.entity.Accessory;
-import com.ia.backend.exception.AccessoryNotFoundException;
 import com.ia.backend.exception.AlreadyExistException;
+import com.ia.backend.exception.NotFoundException;
 import com.ia.backend.mapper.AccessoryMapper;
 import com.ia.backend.repository.AccessoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ public class AccessoryService {
         log.debug("Fetching accessory with id: {}", id);
         return accessoryRepository.findById(id)
                 .map(accessoryMapper::toDto)
-                .orElseThrow(() -> new AccessoryNotFoundException("Accessory not found."));
+                .orElseThrow(() -> new NotFoundException("Accessory not found."));
     }
 
     @Transactional
@@ -54,7 +54,7 @@ public class AccessoryService {
     @Transactional
     public AccessoryResponse updateAccessory(Long id, AccessoryRequest accessoryRequest) {
         Accessory existingAccessory = accessoryRepository.findById(id)
-                .orElseThrow(() -> new AccessoryNotFoundException("Accessory not found."));
+                .orElseThrow(() -> new NotFoundException("Accessory not found."));
 
         accessoryMapper.updateAccessory(accessoryRequest, existingAccessory);
 
@@ -66,7 +66,7 @@ public class AccessoryService {
     public void deleteAccessory(Long id) {
         if (!accessoryRepository.existsById(id)) {
             log.error("Attempted to delete non-existent accessory with id: {}", id);
-            throw new AccessoryNotFoundException("Accessory not found.");
+            throw new NotFoundException("Accessory not found.");
         }
 
         accessoryRepository.deleteById(id);

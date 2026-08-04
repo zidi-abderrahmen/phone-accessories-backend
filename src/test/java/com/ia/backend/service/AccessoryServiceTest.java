@@ -4,8 +4,8 @@ import com.ia.backend.dto.accessory.AccessoryRequest;
 import com.ia.backend.dto.accessory.AccessoryResponse;
 import com.ia.backend.entity.Accessory;
 import com.ia.backend.entity.enums.Category;
-import com.ia.backend.exception.AccessoryNotFoundException;
 import com.ia.backend.exception.AlreadyExistException;
+import com.ia.backend.exception.NotFoundException;
 import com.ia.backend.mapper.AccessoryMapper;
 import com.ia.backend.repository.AccessoryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,7 +94,7 @@ class AccessoryServiceTest {
         when(accessoryRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> accessoryService.getAccessoryById(99L))
-                .isInstanceOf(AccessoryNotFoundException.class)
+                .isInstanceOf(NotFoundException.class)
                 .hasMessage("Accessory not found.");
     }
 
@@ -141,7 +141,7 @@ class AccessoryServiceTest {
         when(accessoryRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> accessoryService.updateAccessory(99L, accessoryRequest))
-                .isInstanceOf(AccessoryNotFoundException.class)
+                .isInstanceOf(NotFoundException.class)
                 .hasMessage("Accessory not found.");
 
         verify(accessoryMapper, never()).updateAccessory(any(), any());
@@ -162,7 +162,7 @@ class AccessoryServiceTest {
         when(accessoryRepository.existsById(99L)).thenReturn(false);
 
         assertThatThrownBy(() -> accessoryService.deleteAccessory(99L))
-                .isInstanceOf(AccessoryNotFoundException.class);
+                .isInstanceOf(NotFoundException.class);
 
         verify(accessoryRepository, never()).deleteById(any());
     }
