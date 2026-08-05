@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity @Table(name = "accessory_categories")
 @Getter @Setter
@@ -17,7 +19,7 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, unique = true, length = 50)
     private String name;
 
     @Column(nullable = false, length = 500)
@@ -25,6 +27,10 @@ public class Category {
 
     @Column(nullable = false, length = 500)
     private String imageUrl;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    private List<Accessory> accessories = new ArrayList<>();
 
     @Version
     private Integer version;

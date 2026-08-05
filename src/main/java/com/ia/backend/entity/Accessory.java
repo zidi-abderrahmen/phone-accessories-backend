@@ -1,6 +1,5 @@
 package com.ia.backend.entity;
 
-import com.ia.backend.entity.enums.Category;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -30,8 +29,8 @@ public class Accessory {
     @Column(nullable = false)
     private int stock;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @Column(nullable = false, unique = true, length = 10)
