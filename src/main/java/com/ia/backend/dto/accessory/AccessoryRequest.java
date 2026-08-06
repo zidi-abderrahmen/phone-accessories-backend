@@ -1,6 +1,5 @@
 package com.ia.backend.dto.accessory;
 
-import com.ia.backend.entity.enums.Category;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -23,8 +22,8 @@ public record AccessoryRequest(
         @PositiveOrZero(message = "Stock cannot be zero or negative")
         int stock,
 
-        @NotNull(message = "Stock cannot be null")
-        Category category,
+        @NotNull(message = "Category cannot be null")
+        Long categoryId,
 
         @NotBlank(message = "Product Code cannot be blank")
         @Size(max = 10, message = "Product Code must not exceed 10 characters")

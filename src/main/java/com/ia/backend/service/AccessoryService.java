@@ -3,10 +3,12 @@ package com.ia.backend.service;
 import com.ia.backend.dto.accessory.AccessoryRequest;
 import com.ia.backend.dto.accessory.AccessoryResponse;
 import com.ia.backend.entity.Accessory;
+import com.ia.backend.entity.Category;
 import com.ia.backend.exception.AlreadyExistException;
 import com.ia.backend.exception.NotFoundException;
 import com.ia.backend.mapper.AccessoryMapper;
 import com.ia.backend.repository.AccessoryRepository;
+import com.ia.backend.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,6 +23,7 @@ public class AccessoryService {
 
     private final AccessoryRepository accessoryRepository;
     private final AccessoryMapper accessoryMapper;
+    private final CategoryRepository categoryRepository;
 
     @Transactional(readOnly = true)
     public Page<AccessoryResponse> getAllAccessories(Pageable pageable) {
@@ -43,7 +46,10 @@ public class AccessoryService {
             throw new AlreadyExistException("Product Code already exists.");
         }
 
+        Category existingCategory = validateCategory(accessoryRequest.categoryId());
+
         Accessory newAccessory = accessoryMapper.toEntity(accessoryRequest);
+        newAccessory.setCategory(existingCategory);
 
         Accessory savedAccessory = accessoryRepository.save(newAccessory);
 
@@ -56,10 +62,24 @@ public class AccessoryService {
         Accessory existingAccessory = accessoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Accessory not found."));
 
+        if (!existingAccessory.getProductCode().equals(accessoryRequest.productCode())
+                && accessoryRepository.existsByProductCode(accessoryRequest.productCode())) {
+            throw new AlreadyExistException("Product Code already exists.");
+        }
+
+        Category existingCategory = validateCategory(accessoryRequest.categoryId());
+
         accessoryMapper.updateAccessory(accessoryRequest, existingAccessory);
+        existingAccessory.setCategory(existingCategory);
 
         log.info("Updated accessory with id: {}", id);
         return accessoryMapper.toDto(existingAccessory);
+    }
+
+    private Category validateCategory(Long categoryId) {
+        log.debug("Validating category with id: {}", categoryId);
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category not found."));
     }
 
     @Transactional

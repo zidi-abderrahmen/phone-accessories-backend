@@ -3,11 +3,13 @@ package com.ia.backend.service;
 import com.ia.backend.dto.accessory.AccessoryRequest;
 import com.ia.backend.dto.accessory.AccessoryResponse;
 import com.ia.backend.entity.Accessory;
-import com.ia.backend.entity.enums.Category;
+import com.ia.backend.entity.Category;
 import com.ia.backend.exception.AlreadyExistException;
 import com.ia.backend.exception.NotFoundException;
 import com.ia.backend.mapper.AccessoryMapper;
+import com.ia.backend.mapper.CategoryMapper;
 import com.ia.backend.repository.AccessoryRepository;
+import com.ia.backend.repository.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +37,13 @@ class AccessoryServiceTest {
     private AccessoryRepository accessoryRepository;
 
     @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
     private AccessoryMapper accessoryMapper;
+
+    @Mock
+    private CategoryMapper categoryMapper;
 
     @InjectMocks
     private AccessoryService accessoryService;
@@ -43,16 +51,22 @@ class AccessoryServiceTest {
     private Accessory accessory;
     private AccessoryRequest accessoryRequest;
     private AccessoryResponse accessoryResponse;
+    private Category category;
 
     @BeforeEach
     void setUp() {
+        category = new Category();
+        category.setId(1L);
+        category.setName("Category 1");
+        category.setDescription("Description 1");
+
         accessory = new Accessory();
         accessory.setId(1L);
         accessory.setTitle("Accessory 1");
         accessory.setDescription("Description 1");
         accessory.setPrice(new BigDecimal("12.34"));
         accessory.setStock(5);
-        accessory.setCategory(Category.CABLE);
+        accessory.setCategory(category);
         accessory.setProductCode("123456");
         accessory.setCreatedAt(LocalDateTime.now());
         accessory.setUpdatedAt(LocalDateTime.now());
@@ -62,7 +76,7 @@ class AccessoryServiceTest {
                 "Description 2",
                 new BigDecimal("78.99"),
                 4,
-                Category.CABLE,
+                1L,
                 "1542648"
         );
         accessoryResponse = new AccessoryResponse(
@@ -71,7 +85,7 @@ class AccessoryServiceTest {
                 "Description 2",
                 new BigDecimal("78.99"),
                 4,
-                Category.CABLE,
+                categoryMapper.toResponse(category),
                 "1542648",
                 LocalDateTime.now(),
                 LocalDateTime.now()
@@ -101,6 +115,7 @@ class AccessoryServiceTest {
     @Test
     void createAccessory_whenProductCodeIsNew_shouldSaveAndReturn() {
         when(accessoryRepository.existsByProductCode(any())).thenReturn(false);
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         when(accessoryMapper.toEntity(accessoryRequest)).thenReturn(accessory);
         when(accessoryRepository.save(accessory)).thenReturn(accessory);
         when(accessoryMapper.toDto(accessory)).thenReturn(accessoryResponse);
@@ -125,6 +140,7 @@ class AccessoryServiceTest {
     @Test
     void updateAccessory_whenExists_shouldUpdateAndReturn() {
         when(accessoryRepository.findById(1L)).thenReturn(Optional.of(accessory));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(category));
         doNothing().when(accessoryMapper).updateAccessory(accessoryRequest, accessory);
         when(accessoryMapper.toDto(accessory)).thenReturn(accessoryResponse);
 
