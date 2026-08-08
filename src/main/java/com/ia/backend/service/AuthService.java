@@ -167,34 +167,34 @@ public class AuthService {
 
     @Transactional
     public EmailResponse forgotPassword(ForgotPasswordRequest request) {
-        log.info("Forgot password request received for email: {}", request.email());
+        log.info("Sending reset password email to user with email: {}", request.email());
         userRepository.findByEmail(request.email()).ifPresent(existingUser -> {
-            log.info("User found with email: {}", existingUser.getEmail());
-            resetPasswordRepository.deleteAllByUser(existingUser);
-            resetPasswordRepository.flush();
 
+            log.info("Reset password email sent to user: {}", existingUser.getEmail());
             String rawToken = UUID.randomUUID().toString();
             String hashedToken = tokenHasher.hash(rawToken);
 
-            ResetPassword newResetPassword = ResetPassword.builder()
-                    .token(hashedToken)
-                    .user(existingUser)
-                    .expiresAt(LocalDateTime.now().plusMinutes(15))
-                    .build();
+            log.info("Creating reset password token: {}", hashedToken);
+            ResetPassword resetPassword = resetPasswordRepository.findByUser(existingUser)
+                    .orElseGet(() -> ResetPassword.builder()
+                            .user(existingUser)
+                            .build());
 
-            log.info("Saving reset password: {}", newResetPassword);
-            existingUser.setResetPassword(newResetPassword);
-            userRepository.save(existingUser);
+            log.info("Saving reset password token: {}", hashedToken);
+            resetPassword.setToken(hashedToken);
+            resetPassword.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+            resetPassword.setVerified(false);
 
+            resetPasswordRepository.save(resetPassword);
+
+            log.info("Reset password email sent to user: {}", existingUser.getEmail());
             String verificationLink = baseUrl + "/reset-password?token=" + rawToken;
             emailService.sendEmail(
                     existingUser.getEmail(),
-                    (existingUser.getFirstName() + " " + existingUser.getLastName()),
+                    existingUser.getFirstName() + " " + existingUser.getLastName(),
                     verificationLink,
                     true);
-            log.info("Reset password email sent successfully.");
         });
-
 
         return new EmailResponse("If an account exists with this email, a reset link has been sent.");
     }
