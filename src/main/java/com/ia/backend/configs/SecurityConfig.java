@@ -45,6 +45,11 @@ public class SecurityConfig {
                         "/api/auth/verify-email", "/auth/verify-email",
                         "/api/auth/forgot-password", "/auth/forgot-password",
                         "/api/auth/reset-password", "/auth/reset-password",
+                        "/api/categories", "/categories",
+                        "/api/categories/{id}/accessories", "/categories/{id}/accessories",
+                        "/api/categories/{id}", "/categories/{id}",
+                        "/api/accessories", "/accessories",
+                        "/api/accessories/{id}", "/accessories/{id}",
                         "/error"
                 )
                 .csrf(AbstractHttpConfigurer::disable)
