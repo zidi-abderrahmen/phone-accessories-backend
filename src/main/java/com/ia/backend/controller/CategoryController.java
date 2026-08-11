@@ -1,5 +1,6 @@
 package com.ia.backend.controller;
 
+import com.ia.backend.dto.accessory.AccessoryResponse;
 import com.ia.backend.dto.category.CategoryRequest;
 import com.ia.backend.dto.category.CategoryResponse;
 import com.ia.backend.service.CategoryService;
@@ -22,6 +23,11 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<Page<CategoryResponse>> getAllCategories(Pageable pageable) {
         return ResponseEntity.ok(categoryService.getAllCategories(pageable));
+    }
+
+    @GetMapping("/{id}/accessories")
+    public ResponseEntity<Page<AccessoryResponse>> getAllRelatedAccessories(@PathVariable Long id, Pageable pageable) {
+        return ResponseEntity.ok(categoryService.getAllRelatedAccessories(id, pageable));
     }
 
     @GetMapping("/{id}")
