@@ -21,9 +21,9 @@ public class SuperAdminSeeder {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             @Value("${application.super_admin.first_name}") String firstName,
-            @Value("${application.super-admin.last-name}") String lastName,
-            @Value("${application.super-admin.email}") String email,
-            @Value("${application.super-admin.password}") String password
+            @Value("${application.super_admin.last_name}") String lastName,
+            @Value("${application.super_admin.email}") String email,
+            @Value("${application.super_admin.password}") String password
     ) {
         return args -> {
             UserRole superAdminRole = userRoleRepository.findByName("SUPER_ADMIN")
