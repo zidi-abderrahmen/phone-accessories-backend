@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Entity @Table(name = "users_role")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
-@Builder @SQLRestriction("deleted = false")
+@Builder
 public class UserRole {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
