@@ -1,11 +1,14 @@
 package com.ia.backend.service;
 
+import com.ia.backend.dto.accessory.AccessoryResponse;
 import com.ia.backend.dto.category.CategoryRequest;
 import com.ia.backend.dto.category.CategoryResponse;
 import com.ia.backend.entity.Category;
 import com.ia.backend.exception.AlreadyExistException;
 import com.ia.backend.exception.NotFoundException;
+import com.ia.backend.mapper.AccessoryMapper;
 import com.ia.backend.mapper.CategoryMapper;
+import com.ia.backend.repository.AccessoryRepository;
 import com.ia.backend.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,13 +23,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final AccessoryRepository accessoryRepository;
     private final CategoryMapper categoryMapper;
+    private final AccessoryMapper accessoryMapper;
 
     @Transactional(readOnly = true)
     public Page<CategoryResponse> getAllCategories(Pageable pageable) {
         log.debug("Fetching all categories");
         return categoryRepository.findAll(pageable)
                 .map(categoryMapper::toResponse);
+    }
+
+    public Page<AccessoryResponse> getAllRelatedAccessories(Long categoryId, Pageable pageable) {
+        return accessoryRepository.findAllByCategory_Id(categoryId, pageable)
+                .map(accessoryMapper::toDto);
     }
 
     @Transactional(readOnly = true)
