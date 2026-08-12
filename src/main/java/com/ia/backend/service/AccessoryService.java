@@ -1,7 +1,9 @@
 package com.ia.backend.service;
 
+import com.ia.backend.configs.AccessorySpecification;
 import com.ia.backend.dto.accessory.AccessoryRequest;
 import com.ia.backend.dto.accessory.AccessoryResponse;
+import com.ia.backend.dto.accessory.search.SearchRequest;
 import com.ia.backend.entity.Accessory;
 import com.ia.backend.entity.Category;
 import com.ia.backend.exception.AlreadyExistException;
@@ -13,8 +15,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 @Slf4j
 @Service
@@ -91,5 +96,17 @@ public class AccessoryService {
 
         accessoryRepository.deleteById(id);
         log.info("Deleted accessory with id: {}", id);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AccessoryResponse> filterAccessories(SearchRequest request, Pageable pageable) {
+        Specification<Accessory> spec = Specification
+                .where(AccessorySpecification.hasCategory(request.categoryId()))
+                .and(AccessorySpecification.hasKeyword(request.keyword()))
+                .and(AccessorySpecification.priceBetween(request.minPrice(), request.maxPrice()))
+                .and(AccessorySpecification.inStock(request.inStock()));
+
+        return accessoryRepository.findAll(spec, pageable)
+                .map(accessoryMapper::toDto);
     }
 }
