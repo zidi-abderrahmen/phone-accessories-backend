@@ -50,6 +50,7 @@ public class SecurityConfig {
                         "/api/categories/{id}", "/categories/{id}",
                         "/api/accessories", "/accessories",
                         "/api/accessories/{id}", "/accessories/{id}",
+                        "/api/accessories/search", "/accessories/search",
                         "/error"
                 )
                 .csrf(AbstractHttpConfigurer::disable)
