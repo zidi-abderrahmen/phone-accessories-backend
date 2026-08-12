@@ -2,11 +2,13 @@ package com.ia.backend.controller;
 
 import com.ia.backend.dto.accessory.AccessoryRequest;
 import com.ia.backend.dto.accessory.AccessoryResponse;
+import com.ia.backend.dto.accessory.search.SearchRequest;
 import com.ia.backend.service.AccessoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -46,5 +48,13 @@ public class AccessoryController {
     public ResponseEntity<Void> deleteAccessory(@PathVariable Long id) {
         accessoryService.deleteAccessory(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<AccessoryResponse>> searchAccessories(
+            SearchRequest request,
+            @PageableDefault(size = 12, sort = "createdAt") Pageable pageable
+    ) {
+        return ResponseEntity.ok(accessoryService.filterAccessories(request, pageable));
     }
 }
