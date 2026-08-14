@@ -2,7 +2,6 @@ package com.ia.backend.service;
 
 import com.ia.backend.dto.email.password.ForgotPasswordRequest;
 import com.ia.backend.dto.email.password.ResetPasswordRequest;
-import com.ia.backend.dto.me.MeResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
 import com.ia.backend.dto.user.UserLoginResponse;
 import com.ia.backend.dto.user.UserRegisterRequest;
@@ -227,7 +226,7 @@ public class AuthService {
         return new EmailResponse("Password reset successfully.");
     }
 
-    public MeResponse getMe() {
+    public UserResponse getMe() {
         UserDetails userDetails = getUserDetails();
 
         log.info("Getting user details for user: {}", userDetails.getUsername());
@@ -243,7 +242,7 @@ public class AuthService {
                 .collect(Collectors.toSet());
 
         log.info("User details retrieved successfully.");
-        return new MeResponse(
+        return new UserResponse(
                 user.getId(),
                 user.getFirstName(),
                 user.getLastName(),

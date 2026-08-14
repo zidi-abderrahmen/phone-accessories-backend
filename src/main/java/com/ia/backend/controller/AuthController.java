@@ -2,7 +2,6 @@ package com.ia.backend.controller;
 
 import com.ia.backend.dto.email.password.ForgotPasswordRequest;
 import com.ia.backend.dto.email.password.ResetPasswordRequest;
-import com.ia.backend.dto.me.MeResponse;
 import com.ia.backend.dto.reftoken.RefreshTokenResponse;
 import com.ia.backend.dto.user.UserLoginRequest;
 import com.ia.backend.dto.user.UserLoginResponse;
@@ -114,7 +113,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<MeResponse> getCurrentUser() {
+    public ResponseEntity<UserResponse> getCurrentUser() {
         return ResponseEntity.ok(authService.getMe());
     }
 
