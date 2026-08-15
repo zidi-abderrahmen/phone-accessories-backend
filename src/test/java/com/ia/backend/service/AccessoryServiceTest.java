@@ -72,6 +72,7 @@ class AccessoryServiceTest {
         accessory.setUpdatedAt(LocalDateTime.now());
 
         accessoryRequest = new AccessoryRequest(
+                "",
                 "Accessory 1",
                 "Description 2",
                 new BigDecimal("78.99"),
@@ -81,6 +82,7 @@ class AccessoryServiceTest {
         );
         accessoryResponse = new AccessoryResponse(
                 1L,
+                "",
                 "Accessory 1",
                 "Description 2",
                 new BigDecimal("78.99"),

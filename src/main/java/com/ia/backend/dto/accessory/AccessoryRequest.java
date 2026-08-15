@@ -6,6 +6,10 @@ import java.math.BigDecimal;
 
 public record AccessoryRequest(
 
+        @NotBlank(message = "Image URL cannot be blank.")
+        @Size(max = 500, message = "Image URL must not exceed 500 characters.")
+        String imageUrl,
+
         @NotBlank(message = "Title cannot be blank.")
         @Size(max = 150, message = "Title must not exceed 150 characters.")
         String title,

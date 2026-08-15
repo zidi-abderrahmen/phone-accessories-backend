@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record AccessoryResponse(
 
         Long id,
+        String imageUrl,
         String title,
         String description,
         BigDecimal price,

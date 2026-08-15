@@ -17,6 +17,9 @@ public class Accessory {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 500)
+    private String imageUrl;
+
     @Column(nullable = false, length = 150)
     private String title;
 
