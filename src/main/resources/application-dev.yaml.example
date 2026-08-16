@@ -35,8 +35,6 @@ spring:
     password: your_password
 
   jpa:
-    hibernate:
-      ddl-auto: update
     show-sql: true
 
   mail:
