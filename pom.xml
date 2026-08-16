@@ -127,6 +127,16 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- The Flyway dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
