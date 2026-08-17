@@ -112,11 +112,6 @@ public class AuthController {
         return ResponseEntity.ok(authService.resetPassword(request));
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<UserResponse> getCurrentUser() {
-        return ResponseEntity.ok(authService.getMe());
-    }
-
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             HttpServletRequest request,

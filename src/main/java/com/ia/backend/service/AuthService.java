@@ -12,22 +12,18 @@ import com.ia.backend.entity.*;
 import com.ia.backend.exception.AlreadyExistException;
 import com.ia.backend.exception.ExpiredException;
 import com.ia.backend.exception.NotFoundException;
-import com.ia.backend.mapper.AuthMapper;
+import com.ia.backend.mapper.UserMapper;
 import com.ia.backend.repository.*;
 import com.ia.backend.util.JwtUtils;
 import com.ia.backend.util.TokenHasherUtils;
 import com.ia.backend.util.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +32,6 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -45,7 +40,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
-    private final AuthMapper authMapper;
+    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
@@ -72,7 +67,7 @@ public class AuthService {
                     return new NotFoundException("User role not found.");
                 });
 
-        User newUser = authMapper.toUser(request);
+        User newUser = userMapper.toUser(request);
         newUser.setRoles(Set.of(userRole));
         newUser.setPassword(passwordEncoder.encode(request.password()));
 
@@ -96,7 +91,7 @@ public class AuthService {
                 false);
 
         log.info("Email sent successfully.");
-        return authMapper.toUserResponse(savedUser);
+        return userMapper.toUserResponse(savedUser);
     }
 
     public UserLoginResponse login(UserLoginRequest request) {
@@ -113,7 +108,7 @@ public class AuthService {
         User user = userRepository.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new NotFoundException("User not found with email: " + principal.getUsername()));
 
-        UserResponse userResponse = authMapper.toUserResponse(user);
+        UserResponse userResponse = userMapper.toUserResponse(user);
 
         log.info("User logged in successfully.");
         return new UserLoginResponse(tokenService.issueTokens(user, request.rememberMe()), userResponse);
@@ -224,53 +219,5 @@ public class AuthService {
 
         log.info("Password reset successfully.");
         return new EmailResponse("Password reset successfully.");
-    }
-
-    public UserResponse getMe() {
-        UserDetails userDetails = getUserDetails();
-
-        log.info("Getting user details for user: {}", userDetails.getUsername());
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> {
-                    log.error("User not found");
-                    return new UsernameNotFoundException("User not found");
-                });
-
-        Set<String> roles = user.getRoles()
-                .stream()
-                .map(UserRole::getName)
-                .collect(Collectors.toSet());
-
-        log.info("User details retrieved successfully.");
-        return new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                roles,
-                user.getCreatedAt(),
-                user.getUpdatedAt()
-        );
-    }
-
-    private static @NonNull UserDetails getUserDetails() {
-        log.info("Getting user details from security context.");
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()
-                || "anonymousUser".equals(authentication.getPrincipal())) {
-            log.error("User is not authenticated.");
-            throw new BadCredentialsException("User is not authenticated.");
-        }
-
-        log.info("User is authenticated.");
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-        if (userDetails == null) {
-            log.error("User details not found.");
-            throw new UsernameNotFoundException("User details not found");
-        }
-
-        return userDetails;
     }
 }
