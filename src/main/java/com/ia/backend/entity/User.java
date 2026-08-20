@@ -1,5 +1,6 @@
 package com.ia.backend.entity;
 
+import com.ia.backend.entity.cart.Cart;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,6 +34,9 @@ public class User {
 
     @Column(nullable = false, length = 250)
     private String password;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Cart cart;
 
     @Builder.Default
     @ManyToMany(fetch = FetchType.LAZY)
