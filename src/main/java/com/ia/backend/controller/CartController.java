@@ -28,8 +28,9 @@ public class CartController {
         return ResponseEntity.status(HttpStatus.CREATED).body(cartService.addItemToCart(request));
     }
 
-    @PutMapping ResponseEntity<CartItemResponse> updateItemInCart(@Valid @RequestBody UpdateCartItemRequest request) {
-        return ResponseEntity.ok(cartService.updateCartItemQuantity(request));
+    @PutMapping("/cart-item/{id}")
+    public ResponseEntity<CartItemResponse> updateItemInCart(@PathVariable Long id, @Valid @RequestBody UpdateCartItemRequest request) {
+        return ResponseEntity.ok(cartService.updateCartItemQuantity(id, request));
     }
 
     @DeleteMapping("/cart-item/{id}")

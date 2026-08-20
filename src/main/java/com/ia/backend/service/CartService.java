@@ -120,10 +120,10 @@ public class CartService {
     }
 
     @Transactional
-    public CartItemResponse updateCartItemQuantity(UpdateCartItemRequest request) {
+    public CartItemResponse updateCartItemQuantity(Long id, UpdateCartItemRequest request) {
         User currentUser = userService.getCurrentUserEntity();
 
-        CartItem cartItem = getCartItem(request.cartItemId(), currentUser.getId());
+        CartItem cartItem = getCartItem(id, currentUser.getId());
 
         if (request.newQuantity() > cartItem.getAccessory().getStock()) {
             log.error("Requested quantity exceeds available stock.");
