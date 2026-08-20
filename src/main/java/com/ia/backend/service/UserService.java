@@ -89,7 +89,7 @@ public class UserService {
         );
     }
 
-    private User getCurrentUserEntity() {
+    public User getCurrentUserEntity() {
         UserDetails userDetails = getUserDetails();
 
         return userRepository.findByEmail(userDetails.getUsername())
