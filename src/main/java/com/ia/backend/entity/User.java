@@ -1,6 +1,7 @@
 package com.ia.backend.entity;
 
 import com.ia.backend.entity.cart.Cart;
+import com.ia.backend.entity.order.Order;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -18,7 +19,7 @@ import java.util.Set;
 @NoArgsConstructor @AllArgsConstructor
 @Builder @ToString(exclude = { "password", "refreshTokens", "emailVerification" })
 @SQLRestriction("deleted = false")
-public class User {
+public class    User {
 
     @Id @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -31,6 +32,9 @@ public class User {
 
     @Column(nullable = false, length = 150, unique = true)
     private String email;
+
+    @Column(length = 50)
+    private String phoneNumber;
 
     @Column(nullable = false, length = 250)
     private String password;
@@ -60,6 +64,12 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private ResetPassword resetPassword;
+
+    @Builder.Default
+    @OneToMany(
+            mappedBy = "user",
+            fetch = FetchType.LAZY)
+    private Set<Order> orders = new HashSet<>();
 
     @Builder.Default
     @Column(nullable = false)
