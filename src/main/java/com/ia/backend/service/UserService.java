@@ -83,6 +83,7 @@ public class UserService {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
+                user.getPhoneNumber(),
                 roles,
                 user.getCreatedAt(),
                 user.getUpdatedAt()
