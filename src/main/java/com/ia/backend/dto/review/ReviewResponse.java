@@ -13,5 +13,6 @@ public record ReviewResponse(
         Integer rating,
         String comment,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        boolean mine
 ) {}

@@ -8,7 +8,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", uses = UserMapper.class)
 public interface ReviewMapper {
 
-    ReviewResponse toResponse(Review review);
+    ReviewResponse toResponse(Review review, boolean mine);
 
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "accessory", ignore = true)

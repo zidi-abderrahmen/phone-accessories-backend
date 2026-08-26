@@ -17,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,9 +31,14 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public Page<ReviewResponse> getAllReviewsByAccessoryId(Pageable pageable, Long accessoryId) {
+        User currentUser = userService.getCurrentUserEntity();
+
         log.debug("Fetching reviews for accessory with id: {}", accessoryId);
         return reviewRepository.findAllByAccessory_Id(accessoryId, pageable)
-                .map(reviewMapper::toResponse);
+                .map(review -> reviewMapper.toResponse(
+                        review,
+                        Objects.equals(review.getUser().getId(), currentUser.getId())
+                ));
     }
 
     @Transactional
@@ -51,7 +58,7 @@ public class ReviewService {
         newReview.setUser(currentUser);
         newReview.setAccessory(existingAccessory);
 
-        return reviewMapper.toResponse(reviewRepository.save(newReview));
+        return reviewMapper.toResponse(reviewRepository.save(newReview), true);
     }
 
     @Transactional
@@ -64,7 +71,9 @@ public class ReviewService {
         log.debug("Updating review with id: {}", id);
         reviewMapper.updateReview(request, existingReview);
 
-        return reviewMapper.toResponse(existingReview);
+        reviewRepository.saveAndFlush(existingReview);
+
+        return reviewMapper.toResponse(existingReview, true);
     }
 
     @Transactional
