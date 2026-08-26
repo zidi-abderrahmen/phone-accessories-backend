@@ -11,8 +11,6 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     Page<Review> findAllByAccessory_Id(Long accessoryId, Pageable pageable);
-    List<Review> findAllByUser_IdAndAccessory_Id(String userId, Long accessoryId);
     Optional<Review> findByUser_IdAndId(String userId, Long reviewId);
     boolean existsByUser_IdAndAccessory_Id(String userId, Long accessoryId);
-    boolean existsByUser_IdAndId(String userId, Long reviewId);
 }
