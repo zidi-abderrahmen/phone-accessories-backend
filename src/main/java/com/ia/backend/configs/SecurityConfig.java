@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -54,6 +55,7 @@ public class SecurityConfig {
                         "/api/accessories", "/accessories",
                         "/api/accessories/{id}", "/accessories/{id}",
                         "/api/accessories/search", "/accessories/search",
+                        "/api/reviews/accessory/{id}", "/reviews/accessory/{id}",
                         "/error"
                 )
                 .csrf(AbstractHttpConfigurer::disable)
@@ -61,7 +63,21 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/reviews/accessory/**",
+                                "/reviews/accessory/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/api/reviews/accessory/**",
+                                "/reviews/accessory/**"
+                        ).authenticated()
+
+
+                        .anyRequest().permitAll()
+                )
                 .exceptionHandling(this::exceptionHandlingConfigurer);
         return http.build();
     }
