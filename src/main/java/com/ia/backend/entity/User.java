@@ -18,8 +18,7 @@ import java.util.Set;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder @ToString(exclude = { "password", "refreshTokens", "emailVerification" })
-@SQLRestriction("deleted = false")
-public class    User {
+public class User {
 
     @Id @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -74,6 +73,10 @@ public class    User {
     @Builder.Default
     @Column(nullable = false)
     private boolean deleted = false;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean blocked = false;
 
     @Version
     private Integer version;
