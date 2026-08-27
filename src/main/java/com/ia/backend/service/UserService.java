@@ -5,7 +5,6 @@ import com.ia.backend.dto.user.password.ChangePasswordRequest;
 import com.ia.backend.dto.user.password.ChangePasswordResponse;
 import com.ia.backend.dto.user.profile.UpdateProfileRequest;
 import com.ia.backend.entity.User;
-import com.ia.backend.entity.UserRole;
 import com.ia.backend.exception.AlreadyExistException;
 import com.ia.backend.mapper.UserMapper;
 import com.ia.backend.repository.UserRepository;
@@ -20,9 +19,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -69,25 +65,12 @@ public class UserService {
         return userMapper.toUserResponse(user);
     }
 
+    @Transactional(readOnly = true)
     public UserResponse getCurrentUser() {
         User user = getCurrentUserEntity();
 
-        Set<String> roles = user.getRoles()
-                .stream()
-                .map(UserRole::getName)
-                .collect(Collectors.toSet());
-
         log.info("User details retrieved successfully.");
-        return new UserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getPhoneNumber(),
-                roles,
-                user.getCreatedAt(),
-                user.getUpdatedAt()
-        );
+        return userMapper.toUserResponse(user);
     }
 
     public User getCurrentUserEntity() {

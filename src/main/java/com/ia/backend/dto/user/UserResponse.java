@@ -11,6 +11,10 @@ public record UserResponse(
         String email,
         String phoneNumber,
         Set<String> roles,
+        boolean enabled,
+        boolean blocked,
+        boolean deleted,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        LocalDateTime deletedAt
 ) {}
