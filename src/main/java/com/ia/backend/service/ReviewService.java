@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,14 +32,24 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public Page<ReviewResponse> getAllReviewsByAccessoryId(Pageable pageable, Long accessoryId) {
-        User currentUser = userService.getCurrentUserEntity();
-
+        User currentUser;
         log.debug("Fetching reviews for accessory with id: {}", accessoryId);
-        return reviewRepository.findAllByAccessory_Id(accessoryId, pageable)
-                .map(review -> reviewMapper.toResponse(
-                        review,
-                        Objects.equals(review.getUser().getId(), currentUser.getId())
-                ));
+        Page<Review> reviews = reviewRepository.findAllByAccessory_Id(accessoryId, pageable);
+
+        try {
+            currentUser = userService.getCurrentUserEntity();
+            return reviews
+                    .map(review -> reviewMapper.toResponse(
+                            review,
+                            Objects.equals(review.getUser().getId(), currentUser.getId())
+                    ));
+        } catch (BadCredentialsException e) {
+            return reviews
+                    .map(review -> reviewMapper.toResponse(
+                            review,
+                            false
+                    ));
+        }
     }
 
     @Transactional
