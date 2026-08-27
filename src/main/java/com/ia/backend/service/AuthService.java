@@ -108,6 +108,16 @@ public class AuthService {
         User user = userRepository.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new NotFoundException("User not found with email: " + principal.getUsername()));
 
+        if (user.isDeleted()) {
+            log.error("User is deleted.");
+            throw new BadCredentialsException("User is deleted. Please contact support for assistance.");
+        }
+
+        if (!user.isEnabled()) {
+            log.error("User is disabled.");
+            throw new BadCredentialsException("User is disabled. Please contact support for assistance.");
+        }
+
         UserResponse userResponse = userMapper.toUserResponse(user);
 
         log.info("User logged in successfully.");
