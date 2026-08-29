@@ -9,9 +9,9 @@ application:
   security:
     jwt:
       secret: your_256_bit_secret_key_here_at_least_32_characters_long
-      expiration-ms: your_jwt_expiration_ms
-      refresh-expiration-ms: your_jwt_refresh_expiration_ms
-      remember-me-expiration-ms: your_jwt_remember_me_expiration_ms
+      expiration: your_jwt_expiration_ms
+      refresh-expiration: your_jwt_refresh_expiration_ms
+      remember-me-expiration: your_jwt_remember_me_expiration_ms
 
   super_admin:
       first_name: your_super_admin_first_name

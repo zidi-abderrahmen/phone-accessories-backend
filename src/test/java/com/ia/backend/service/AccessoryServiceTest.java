@@ -1,15 +1,16 @@
 package com.ia.backend.service;
 
-import com.ia.backend.dto.accessory.AccessoryRequest;
-import com.ia.backend.dto.accessory.AccessoryResponse;
-import com.ia.backend.entity.Accessory;
-import com.ia.backend.entity.Category;
-import com.ia.backend.exception.AlreadyExistException;
-import com.ia.backend.exception.NotFoundException;
-import com.ia.backend.mapper.AccessoryMapper;
-import com.ia.backend.mapper.CategoryMapper;
-import com.ia.backend.repository.AccessoryRepository;
-import com.ia.backend.repository.CategoryRepository;
+import com.ia.backend.accessory.dto.AccessoryRequest;
+import com.ia.backend.accessory.dto.AccessoryResponse;
+import com.ia.backend.accessory.entity.Accessory;
+import com.ia.backend.accessory.service.AccessoryService;
+import com.ia.backend.category.entity.Category;
+import com.ia.backend.common.exception.AlreadyExistException;
+import com.ia.backend.common.exception.NotFoundException;
+import com.ia.backend.accessory.mapper.AccessoryMapper;
+import com.ia.backend.category.mapper.CategoryMapper;
+import com.ia.backend.accessory.repository.AccessoryRepository;
+import com.ia.backend.category.repository.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
