@@ -2,8 +2,8 @@ package com.ia.backend.order.entity;
 
 import com.ia.backend.user.entity.User;
 import com.ia.backend.common.enums.OrderStatus;
-import com.ia.backend.common.enums.PaymentMethod;
-import com.ia.backend.common.enums.ShippingMethod;
+import com.ia.backend.order.enums.PaymentMethod;
+import com.ia.backend.order.enums.ShippingMethod;
 import jakarta.persistence.*;
 import lombok.*;
 

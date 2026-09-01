@@ -7,7 +7,7 @@ import com.ia.backend.user.entity.User;
 import com.ia.backend.cart.entity.Cart;
 import com.ia.backend.cart.entity.CartItem;
 import com.ia.backend.common.enums.OrderStatus;
-import com.ia.backend.common.enums.ShippingMethod;
+import com.ia.backend.order.enums.ShippingMethod;
 import com.ia.backend.order.entity.Order;
 import com.ia.backend.order.entity.OrderItem;
 import com.ia.backend.common.exception.NotFoundException;

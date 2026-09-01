@@ -1,7 +1,7 @@
 package com.ia.backend.order.dto;
 
-import com.ia.backend.common.enums.PaymentMethod;
-import com.ia.backend.common.enums.ShippingMethod;
+import com.ia.backend.order.enums.PaymentMethod;
+import com.ia.backend.order.enums.ShippingMethod;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
