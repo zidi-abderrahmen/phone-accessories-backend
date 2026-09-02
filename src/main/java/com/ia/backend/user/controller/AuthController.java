@@ -1,7 +1,7 @@
 package com.ia.backend.user.controller;
 
-import com.ia.backend.user.password.dto.request.ForgotPasswordRequest;
-import com.ia.backend.user.password.dto.request.ResetPasswordRequest;
+import com.ia.backend.user.password.dto.ForgotPasswordRequest;
+import com.ia.backend.user.password.dto.ResetPasswordRequest;
 import com.ia.backend.user.dto.refreshtoken.RefreshTokenResponse;
 import com.ia.backend.user.dto.login.UserLoginRequest;
 import com.ia.backend.user.dto.login.UserLoginResponse;

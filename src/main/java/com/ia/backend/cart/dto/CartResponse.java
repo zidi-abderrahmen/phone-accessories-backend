@@ -1,6 +1,5 @@
 package com.ia.backend.cart.dto;
 
-import com.ia.backend.cart.dto.items.CartItemResponse;
 import com.ia.backend.user.dto.response.UserResponse;
 
 import java.time.LocalDateTime;

@@ -1,4 +1,4 @@
-package com.ia.backend.wishlist.dto.items;
+package com.ia.backend.wishlist.dto;
 
 import com.ia.backend.accessory.dto.AccessoryResponse;
 

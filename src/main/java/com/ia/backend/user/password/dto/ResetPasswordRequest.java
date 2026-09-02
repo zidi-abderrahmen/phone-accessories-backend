@@ -1,4 +1,4 @@
-package com.ia.backend.user.password.dto.request;
+package com.ia.backend.user.password.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

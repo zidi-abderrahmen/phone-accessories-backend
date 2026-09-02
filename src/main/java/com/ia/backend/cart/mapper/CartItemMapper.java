@@ -1,7 +1,7 @@
 package com.ia.backend.cart.mapper;
 
-import com.ia.backend.cart.dto.items.CartItemRequest;
-import com.ia.backend.cart.dto.items.CartItemResponse;
+import com.ia.backend.cart.dto.CartItemRequest;
+import com.ia.backend.cart.dto.CartItemResponse;
 import com.ia.backend.cart.entity.CartItem;
 import org.mapstruct.*;
 

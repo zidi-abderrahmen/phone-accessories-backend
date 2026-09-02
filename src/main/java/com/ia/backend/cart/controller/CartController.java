@@ -1,9 +1,9 @@
 package com.ia.backend.cart.controller;
 
 import com.ia.backend.cart.dto.CartResponse;
-import com.ia.backend.cart.dto.items.CartItemRequest;
-import com.ia.backend.cart.dto.items.CartItemResponse;
-import com.ia.backend.cart.dto.items.UpdateCartItemRequest;
+import com.ia.backend.cart.dto.CartItemRequest;
+import com.ia.backend.cart.dto.CartItemResponse;
+import com.ia.backend.cart.dto.UpdateCartItemRequest;
 import com.ia.backend.cart.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

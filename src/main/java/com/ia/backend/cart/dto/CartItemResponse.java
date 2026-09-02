@@ -1,4 +1,4 @@
-package com.ia.backend.cart.dto.items;
+package com.ia.backend.cart.dto;
 
 import com.ia.backend.accessory.dto.AccessoryResponse;
 

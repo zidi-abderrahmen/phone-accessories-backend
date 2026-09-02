@@ -1,7 +1,7 @@
 package com.ia.backend.user.service;
 
-import com.ia.backend.user.password.dto.request.ForgotPasswordRequest;
-import com.ia.backend.user.password.dto.request.ResetPasswordRequest;
+import com.ia.backend.user.password.dto.ForgotPasswordRequest;
+import com.ia.backend.user.password.dto.ResetPasswordRequest;
 import com.ia.backend.user.verification.entity.EmailVerification;
 import com.ia.backend.user.verification.repository.EmailVerificationRepository;
 import com.ia.backend.user.verification.service.EmailService;

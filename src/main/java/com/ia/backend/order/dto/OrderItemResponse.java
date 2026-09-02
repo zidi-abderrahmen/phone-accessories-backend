@@ -1,4 +1,4 @@
-package com.ia.backend.order.dto.items;
+package com.ia.backend.order.dto;
 
 import com.ia.backend.accessory.dto.AccessoryResponse;
 

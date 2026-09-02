@@ -1,7 +1,7 @@
 package com.ia.backend.wishlist.controller;
 
 import com.ia.backend.wishlist.dto.WishlistResponse;
-import com.ia.backend.wishlist.dto.items.WishlistItemResponse;
+import com.ia.backend.wishlist.dto.WishlistItemResponse;
 import com.ia.backend.wishlist.service.WishlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

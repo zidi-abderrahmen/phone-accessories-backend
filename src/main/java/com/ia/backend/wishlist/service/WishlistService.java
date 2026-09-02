@@ -1,7 +1,7 @@
 package com.ia.backend.wishlist.service;
 
 import com.ia.backend.wishlist.dto.WishlistResponse;
-import com.ia.backend.wishlist.dto.items.WishlistItemResponse;
+import com.ia.backend.wishlist.dto.WishlistItemResponse;
 import com.ia.backend.accessory.entity.Accessory;
 import com.ia.backend.user.entity.User;
 import com.ia.backend.wishlist.entity.Wishlist;

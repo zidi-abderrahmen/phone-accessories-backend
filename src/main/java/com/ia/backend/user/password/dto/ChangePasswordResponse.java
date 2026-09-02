@@ -1,4 +1,4 @@
-package com.ia.backend.user.password.dto.response;
+package com.ia.backend.user.password.dto;
 
 import com.ia.backend.user.dto.response.UserResponse;
 

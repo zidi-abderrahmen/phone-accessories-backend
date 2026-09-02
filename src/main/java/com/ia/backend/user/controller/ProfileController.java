@@ -1,8 +1,8 @@
 package com.ia.backend.user.controller;
 
 import com.ia.backend.user.dto.response.UserResponse;
-import com.ia.backend.user.password.dto.request.ChangePasswordRequest;
-import com.ia.backend.user.password.dto.response.ChangePasswordResponse;
+import com.ia.backend.user.password.dto.ChangePasswordRequest;
+import com.ia.backend.user.password.dto.ChangePasswordResponse;
 import com.ia.backend.user.dto.profile.UpdateProfileRequest;
 import com.ia.backend.user.service.UserService;
 import jakarta.validation.Valid;

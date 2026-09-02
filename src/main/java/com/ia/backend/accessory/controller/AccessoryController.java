@@ -2,7 +2,7 @@ package com.ia.backend.accessory.controller;
 
 import com.ia.backend.accessory.dto.AccessoryRequest;
 import com.ia.backend.accessory.dto.AccessoryResponse;
-import com.ia.backend.accessory.dto.search.SearchRequest;
+import com.ia.backend.accessory.dto.SearchRequest;
 import com.ia.backend.accessory.service.AccessoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

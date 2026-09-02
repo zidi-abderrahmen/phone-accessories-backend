@@ -1,4 +1,4 @@
-package com.ia.backend.accessory.dto.search;
+package com.ia.backend.accessory.dto;
 
 import java.math.BigDecimal;
 

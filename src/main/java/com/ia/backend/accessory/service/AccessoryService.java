@@ -3,7 +3,7 @@ package com.ia.backend.accessory.service;
 import com.ia.backend.accessory.repository.specification.AccessorySpecification;
 import com.ia.backend.accessory.dto.AccessoryRequest;
 import com.ia.backend.accessory.dto.AccessoryResponse;
-import com.ia.backend.accessory.dto.search.SearchRequest;
+import com.ia.backend.accessory.dto.SearchRequest;
 import com.ia.backend.accessory.entity.Accessory;
 import com.ia.backend.category.entity.Category;
 import com.ia.backend.common.exception.AlreadyExistException;
