@@ -1,4 +1,4 @@
-package com.ia.backend.email.dto;
+package com.ia.backend.user.verification.dto;
 
 public record EmailResponse(
 

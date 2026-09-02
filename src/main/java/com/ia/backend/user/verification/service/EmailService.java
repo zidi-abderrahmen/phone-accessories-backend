@@ -1,4 +1,4 @@
-package com.ia.backend.email.service;
+package com.ia.backend.user.verification.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;

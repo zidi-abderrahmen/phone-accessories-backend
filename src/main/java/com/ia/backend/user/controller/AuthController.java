@@ -1,14 +1,14 @@
 package com.ia.backend.user.controller;
 
-import com.ia.backend.password.dto.request.ForgotPasswordRequest;
-import com.ia.backend.password.dto.request.ResetPasswordRequest;
+import com.ia.backend.user.password.dto.request.ForgotPasswordRequest;
+import com.ia.backend.user.password.dto.request.ResetPasswordRequest;
 import com.ia.backend.user.dto.refreshtoken.RefreshTokenResponse;
 import com.ia.backend.user.dto.login.UserLoginRequest;
 import com.ia.backend.user.dto.login.UserLoginResponse;
 import com.ia.backend.user.dto.register.UserRegisterRequest;
 import com.ia.backend.user.dto.response.UserResponse;
-import com.ia.backend.email.dto.VerifyEmailRequest;
-import com.ia.backend.email.dto.EmailResponse;
+import com.ia.backend.user.verification.dto.VerifyEmailRequest;
+import com.ia.backend.user.verification.dto.EmailResponse;
 import com.ia.backend.user.service.AuthService;
 import com.ia.backend.user.service.TokenService;
 import jakarta.servlet.http.Cookie;

@@ -1,4 +1,4 @@
-package com.ia.backend.password.entity;
+package com.ia.backend.user.password.entity;
 
 import com.ia.backend.user.entity.User;
 import jakarta.persistence.*;

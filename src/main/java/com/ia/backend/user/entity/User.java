@@ -1,7 +1,7 @@
 package com.ia.backend.user.entity;
 
-import com.ia.backend.email.entity.EmailVerification;
-import com.ia.backend.password.entity.ResetPassword;
+import com.ia.backend.user.verification.entity.EmailVerification;
+import com.ia.backend.user.password.entity.ResetPassword;
 import com.ia.backend.cart.entity.Cart;
 import com.ia.backend.order.entity.Order;
 import jakarta.persistence.*;

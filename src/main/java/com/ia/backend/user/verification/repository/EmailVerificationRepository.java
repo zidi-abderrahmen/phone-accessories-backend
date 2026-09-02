@@ -1,7 +1,6 @@
-package com.ia.backend.email.repository;
+package com.ia.backend.user.verification.repository;
 
-import com.ia.backend.email.entity.EmailVerification;
-import com.ia.backend.user.entity.User;
+import com.ia.backend.user.verification.entity.EmailVerification;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

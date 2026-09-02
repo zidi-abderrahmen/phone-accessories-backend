@@ -1,4 +1,4 @@
-package com.ia.backend.email.entity;
+package com.ia.backend.user.verification.entity;
 
 import com.ia.backend.user.entity.User;
 import jakarta.persistence.*;

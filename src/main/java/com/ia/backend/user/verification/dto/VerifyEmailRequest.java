@@ -1,4 +1,4 @@
-package com.ia.backend.email.dto;
+package com.ia.backend.user.verification.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

@@ -1,6 +1,6 @@
-package com.ia.backend.password.repository;
+package com.ia.backend.user.password.repository;
 
-import com.ia.backend.password.entity.ResetPassword;
+import com.ia.backend.user.password.entity.ResetPassword;
 import com.ia.backend.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
