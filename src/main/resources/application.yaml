@@ -3,12 +3,10 @@ spring:
     name: backend
 
   jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-
     hibernate:
       ddl-auto: validate
+
+    open-in-view: false
 
   flyway:
     enabled: true
@@ -17,6 +15,11 @@ spring:
 
   profiles:
     active: dev
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 server:
   port: 8080
