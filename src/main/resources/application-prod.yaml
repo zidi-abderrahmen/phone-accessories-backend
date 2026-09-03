@@ -72,3 +72,6 @@ springdoc:
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+imagekit:
+  private-key: ${IMAGEKIT_PRIVATE_KEY}
