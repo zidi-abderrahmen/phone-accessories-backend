@@ -106,11 +106,11 @@ public class SecurityConfig {
     public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .securityMatcher(
-                        "/swagger-ui/**",
-                        "/swagger-ui.html",
-                        "/v3/api-docs/**",
-                        "/swagger-resources/**",
-                        "/webjars/**"
+                        "/swagger-ui/**", "/api/swagger-ui/**",
+                        "/swagger-ui.html", "/api/swagger-ui.html",
+                        "/v3/api-docs/**", "/api/v3/api-docs/**",
+                        "/swagger-resources/**", "/api/swagger-resources/**",
+                        "/webjars/**", "/api/webjars/**"
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
