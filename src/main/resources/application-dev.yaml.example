@@ -63,3 +63,6 @@ springdoc:
 
 cors:
   allowed-origins: your_frontend_url(s)
+
+imagekit:
+  private-key: your_imagekit_private_key
