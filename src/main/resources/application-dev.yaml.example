@@ -38,10 +38,10 @@ spring:
     show-sql: true
 
   mail:
-    host: smtp.gmail.com
+    host: your_smtp_host_provider
     port: 587
-    username: ${GMAIL_USERNAME:your.email@gmail.com}
-    password: ${GMAIL_PASSWORD:your_app_password}
+    username: your_gmail_email_address
+    password: your_gmail_email_password
     protocol: smtp
     default-encoding: UTF-8
     properties:
@@ -54,6 +54,10 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+app:
+  mail:
+    from: your_gmail_email_address
+    from-name: your_app_name
 
 springdoc:
   swagger-ui:

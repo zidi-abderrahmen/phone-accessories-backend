@@ -5,10 +5,14 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -17,33 +21,50 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${app.mail.from}")
     private String fromEmail;
 
+    @Value("${app.mail.from-name}")
+    private String fromName;
+
     @Async
-    public void sendEmail(String to, String firstName, String verificationLink, boolean isResetPassword) {
+    public void sendEmail(
+            String to,
+            String firstName,
+            String verificationLink,
+            boolean isResetPassword
+    ) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            String subject = isResetPassword ? "Reset Your Password" : "Verify Your Email Address";
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
+
+            String subject = isResetPassword
+                    ? "Reset Your Password"
+                    : "Verify Your Email Address";
+
             String htmlContent = isResetPassword
                     ? buildResetPasswordHtml(firstName, verificationLink)
                     : buildVerificationHtml(firstName, verificationLink);
 
-            helper.setFrom(fromEmail);
+            helper.setFrom(fromEmail, fromName);
+            helper.setReplyTo(fromEmail);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
-            log.info("{} email sent to: {}", isResetPassword ? "Reset password" : "Verification", to);
 
-        } catch (MessagingException e) {
-            log.error("Failed to send email to: {}", to, e);
-            throw new RuntimeException("Failed to send " + (isResetPassword ? "reset password" : "verification") + " email", e);
+            log.info("Email accepted by SMTP provider. type={}, recipient={}",
+                    isResetPassword ? "password-reset" : "verification",
+                    to);
+
+        } catch (MailException | MessagingException | UnsupportedEncodingException e) {
+            log.error("Failed to send email. recipient={}", to, e);
         }
     }
+
 
     private String buildVerificationHtml(String firstName, String link) {
         return """

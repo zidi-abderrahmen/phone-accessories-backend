@@ -47,8 +47,8 @@ spring:
         order_updates: true
 
   mail:
-    host: smtp.gmail.com        # or any other smtp server of your choice
-    port: 587
+    host: ${MAIL_HOST}       # or any other smtp server of your choice
+    port: ${MAIL_PORT}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     protocol: smtp
@@ -63,6 +63,10 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+app:
+  mail:
+    from: ${MAIL_FROM}
+    from-name: ${MAIL_FROM_NAME}
 
 springdoc:
   swagger-ui:
