@@ -145,6 +145,7 @@ public class AuthController {
         cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(0);
+        cookie.setAttribute("SameSite", "None");
         response.addCookie(cookie);
     }
 
@@ -155,7 +156,7 @@ public class AuthController {
         accessCookie.setSecure(cookieSecure);
         accessCookie.setPath("/");
         accessCookie.setMaxAge(expirationJwt / 1000);
-        accessCookie.setAttribute("SameSite", "Strict");
+        accessCookie.setAttribute("SameSite", "None");
         response.addCookie(accessCookie);
 
         int rememberMeMaxAge = rememberMe ? (int) (rememberMeExpirationMs / 1000) : (int) (refreshExpirationMs / 1000);
@@ -166,7 +167,7 @@ public class AuthController {
         refreshCookie.setSecure(cookieSecure);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(rememberMeMaxAge);
-        refreshCookie.setAttribute("SameSite", "Strict");
+        refreshCookie.setAttribute("SameSite", "None");
         response.addCookie(refreshCookie);
     }
 }
