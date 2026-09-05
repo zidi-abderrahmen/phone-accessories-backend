@@ -1,0 +1,12 @@
+.git
+.gitignore
+.idea
+.vscode
+target
+.env
+*.log
+README.md
+src/main/resources/application-dev.yaml
+src/main/resources/application-dev.yml
+.env.docker
+.env.docker.example
