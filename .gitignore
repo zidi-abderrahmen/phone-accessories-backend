@@ -35,3 +35,6 @@ build/
 ### Ignoring the dev yaml file ###
 src/main/resources/application-dev.yaml
 src/main/resources/application-dev.yml
+
+### Ignoring .env.docker file ###
+.env.docker
