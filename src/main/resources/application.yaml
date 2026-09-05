@@ -14,7 +14,7 @@ spring:
     baseline-on-migrate: true
 
   profiles:
-    active: dev
+    active: ${PROFILE:dev}
 
   servlet:
     multipart:
