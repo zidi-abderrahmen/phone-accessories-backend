@@ -34,4 +34,4 @@ management:
         include: health, info, metrics, startup
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: always
