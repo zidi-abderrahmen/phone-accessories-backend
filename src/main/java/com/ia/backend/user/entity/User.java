@@ -13,9 +13,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Entity @Table(name = "users", indexes = {
-        @Index(name = "idx_user_email", columnList = "email", unique = true)
-})
+@Entity @Table(name = "users")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder @ToString(exclude = { "password", "refreshTokens", "emailVerification" })
