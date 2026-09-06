@@ -1,25 +1,22 @@
 package com.ia.backend.user.verification.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.ia.backend.user.verification.dto.BrevoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final RestClient brevoRestClient;
 
     @Value("${app.mail.from}")
     private String fromEmail;
@@ -27,41 +24,58 @@ public class EmailService {
     @Value("${app.mail.from-name}")
     private String fromName;
 
-    @Async
+    @Async("taskExecutor")
     public void sendEmail(
             String to,
             String firstName,
             String verificationLink,
             boolean isResetPassword
     ) {
+        String subject = isResetPassword
+                ? "Reset Your Password"
+                : "Verify Your Email Address";
+
+        String htmlContent = isResetPassword
+                ? buildResetPasswordHtml(firstName, verificationLink)
+                : buildVerificationHtml(firstName, verificationLink);
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
+            BrevoResponse response = brevoRestClient.post()
+                    .uri("/smtp/email")
+                    .body(Map.of(
+                            "sender", Map.of(
+                                    "email", fromEmail,
+                                    "name", fromName
+                            ),
+                            "to", List.of(
+                                    Map.of(
+                                            "email", to,
+                                            "name", firstName
+                                    )
+                            ),
+                            "replyTo", Map.of(
+                                    "email", fromEmail
+                            ),
+                            "subject", subject,
+                            "htmlContent", htmlContent
+                    ))
+                    .retrieve()
+                    .body(BrevoResponse.class);
 
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
-
-            String subject = isResetPassword
-                    ? "Reset Your Password"
-                    : "Verify Your Email Address";
-
-            String htmlContent = isResetPassword
-                    ? buildResetPasswordHtml(firstName, verificationLink)
-                    : buildVerificationHtml(firstName, verificationLink);
-
-            helper.setFrom(fromEmail, fromName);
-            helper.setReplyTo(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-
-            log.info("Email accepted by SMTP provider. type={}, recipient={}",
+            log.info(
+                    "Email accepted by Brevo. type={}, recipient={}, messageId={}",
                     isResetPassword ? "password-reset" : "verification",
-                    to);
+                    to,
+                    response != null ? response.messageId() : null
+            );
 
-        } catch (MailException | MessagingException | UnsupportedEncodingException e) {
-            log.error("Failed to send email. recipient={}", to, e);
+        } catch (Exception e) {
+            log.error(
+                    "Failed to send email via Brevo API. type={}, recipient={}",
+                    isResetPassword ? "password-reset" : "verification",
+                    to,
+                    e
+            );
         }
     }
 

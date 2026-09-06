@@ -46,25 +46,9 @@ spring:
         order_inserts: true
         order_updates: true
 
-  mail:
-    host: ${MAIL_HOST}       # or any other smtp server of your choice
-    port: ${MAIL_PORT}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    protocol: smtp
-    default-encoding: UTF-8
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
 app:
   mail:
+    api-key: ${MAIL_API_KEY}
     from: ${MAIL_FROM}
     from-name: ${MAIL_FROM_NAME}
 
