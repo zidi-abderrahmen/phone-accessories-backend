@@ -21,6 +21,7 @@ application:
 
     cookies:
       secure: false
+      same-site: Strict
 
   frontend:
     url: your_frontend_url

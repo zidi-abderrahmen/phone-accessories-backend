@@ -15,6 +15,7 @@ application:
 
     cookies:
       secure: ${COOKIES_SECURE}
+      same-site: ${COOKIES_SAME_SITE}
 
   super_admin:
     first_name: ${SUPER_ADMIN_FIRST_NAME}

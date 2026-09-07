@@ -52,7 +52,7 @@ public class TokenService {
         return new RefreshTokenResponse(jwt, rawRefreshToken, rememberMe);
     }
 
-    @Transactional(noRollbackFor = BadCredentialsException.class)
+    @Transactional(noRollbackFor = {BadCredentialsException.class, ExpiredException.class})
     public RefreshTokenResponse refreshToken(String rawRefreshToken) {
         String hashedRefreshToken = tokenHasher.hash(rawRefreshToken);
         RefreshToken existedRefreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
@@ -65,6 +65,10 @@ public class TokenService {
 
         if (existedRefreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new ExpiredException("Refresh token not found or has expired.");
+        }
+
+        if (user.isDeleted()) {
+            throw new BadCredentialsException("User is deleted. Please contact support for assistance.");
         }
 
         if (!user.isEnabled()) {

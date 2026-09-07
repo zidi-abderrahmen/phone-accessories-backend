@@ -62,7 +62,7 @@ public class EmailService {
                     .retrieve()
                     .body(BrevoResponse.class);
 
-            log.info(
+            log.debug(
                     "Email accepted by Brevo. type={}, recipient={}, messageId={}",
                     isResetPassword ? "password-reset" : "verification",
                     to,
