@@ -49,7 +49,7 @@ public class ImageUploadService {
             log.error("Error reading file", e);
             throw new BadRequestException("Error reading file");
         } catch (ImageKitException e) {
-            log.error("Error uploading the status : {}", e.hashCode(), e);
+            log.error("Error uploading image to ImageKit", e);
             throw new BadRequestException("Error uploading image");
         }
     }
