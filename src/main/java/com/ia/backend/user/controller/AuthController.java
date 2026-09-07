@@ -122,13 +122,8 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        Cookie[] cookies = Optional.ofNullable(request.getCookies()).orElse(new Cookie[0]);
-
-        String accessToken = Arrays.stream(cookies)
-                .filter(c -> "access_token".equals(c.getName()))
-                .map(Cookie::getValue)
-                .findFirst()
-                .orElse(null);
+        Cookie[] cookies = Optional.ofNullable(request.getCookies())
+                .orElse(new Cookie[0]);
 
         String refreshToken = Arrays.stream(cookies)
                 .filter(c -> "refresh_token".equals(c.getName()))
@@ -136,25 +131,19 @@ public class AuthController {
                 .findFirst()
                 .orElse(null);
 
-        if (refreshToken == null && accessToken == null) {
-            clearCookie(response, "access_token", "/");
-            clearCookie(response, "refresh_token", "/api/auth/refresh-token");
-            return ResponseEntity.noContent().build();
-        }
+        authService.logout(refreshToken);
 
-        authService.logout(refreshToken, accessToken);
-
-        clearCookie(response, "access_token", "/");
-        clearCookie(response, "refresh_token", "/api/auth/refresh-token");
+        clearCookie(response, "access_token");
+        clearCookie(response, "refresh_token");
 
         return ResponseEntity.noContent().build();
     }
 
-    private void clearCookie(HttpServletResponse response, String name, String path) {
+    private void clearCookie(HttpServletResponse response, String name) {
         ResponseCookie cookie = ResponseCookie.from(name, "")
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .path(path)
+                .path("/")
                 .maxAge(Duration.ZERO)
                 .sameSite(cookieSameSite)
                 .build();
@@ -177,7 +166,7 @@ public class AuthController {
         ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .path("/api/auth/refresh-token")
+                .path("/")
                 .maxAge(Duration.ofMillis(rememberMeExpiration))
                 .sameSite(cookieSameSite)
                 .build();

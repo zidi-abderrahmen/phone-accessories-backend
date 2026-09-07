@@ -6,7 +6,6 @@ import com.ia.backend.user.password.dto.ResetPasswordRequest;
 import com.ia.backend.user.verification.entity.EmailVerification;
 import com.ia.backend.user.verification.repository.EmailVerificationRepository;
 import com.ia.backend.user.verification.service.EmailService;
-import com.ia.backend.user.entity.RefreshToken;
 import com.ia.backend.user.repository.RefreshTokenRepository;
 import com.ia.backend.user.password.entity.ResetPassword;
 import com.ia.backend.user.password.repository.ResetPasswordRepository;
@@ -23,7 +22,6 @@ import com.ia.backend.user.entity.User;
 import com.ia.backend.user.entity.UserRole;
 import com.ia.backend.user.repository.UserRepository;
 import com.ia.backend.user.repository.UserRoleRepository;
-import com.ia.backend.common.util.JwtUtils;
 import com.ia.backend.user.util.TokenHasherUtils;
 import com.ia.backend.common.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +49,6 @@ public class AuthService {
     private final UserRoleRepository userRoleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailService emailService;
@@ -147,22 +144,17 @@ public class AuthService {
         return new EmailResponse("Email verified successfully.");
     }
 
-    public void logout(String refreshToken, String accessToken) {
-        String hashedRefreshToken = tokenHasher.hash(refreshToken);
-
-        log.info("Logging out user with hashed refresh token: {}", hashedRefreshToken);
-        RefreshToken existingRefreshToken = refreshTokenRepository.findByToken(hashedRefreshToken)
-                .orElseThrow(() -> new BadCredentialsException("Refresh token not found or has expired."));
-
-        String userEmail = jwtUtils.getUsernameFromJwtToken(accessToken);
-
-        if (!existingRefreshToken.getUser().getEmail().equals(userEmail)) {
-            log.error("Unauthorized access attempt.");
-            throw new BadCredentialsException("Unauthorized.");
+    public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return;
         }
 
-        log.info("Refresh token found and user is authorized. Deleting refresh token.");
-        refreshTokenRepository.delete(existingRefreshToken);
+        String hashedRefreshToken = tokenHasher.hash(refreshToken);
+        log.info("Refresh token received: {}", hashedRefreshToken);
+
+        log.info("Logging out user with hashed refresh token: {}", hashedRefreshToken);
+        refreshTokenRepository.findByToken(hashedRefreshToken)
+                .ifPresent(refreshTokenRepository::delete);
     }
 
     @Transactional
