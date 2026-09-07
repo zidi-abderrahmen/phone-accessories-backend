@@ -1,10 +1,10 @@
 package com.ia.backend.user.controller;
 
+import com.ia.backend.user.dto.login.LoginResult;
 import com.ia.backend.user.password.dto.ForgotPasswordRequest;
 import com.ia.backend.user.password.dto.ResetPasswordRequest;
 import com.ia.backend.user.dto.refreshtoken.RefreshTokenResponse;
 import com.ia.backend.user.dto.login.UserLoginRequest;
-import com.ia.backend.user.dto.login.UserLoginResponse;
 import com.ia.backend.user.dto.register.UserRegisterRequest;
 import com.ia.backend.user.dto.response.UserResponse;
 import com.ia.backend.user.verification.dto.VerifyEmailRequest;
@@ -17,10 +17,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -42,42 +48,41 @@ public class AuthController {
     @Value("${application.security.cookies.secure}")
     private boolean cookieSecure;
 
+    @Value("${application.security.cookies.same-site}")
+    private String cookieSameSite;
+
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserLoginResponse> login(
+    public ResponseEntity<UserResponse> login(
             @Valid @RequestBody UserLoginRequest request,
             HttpServletResponse response
     ) {
-        UserLoginResponse userLoginResponse = authService.login(request);
+        LoginResult result = authService.login(request);
 
         generateCookies(
-                userLoginResponse.tokens().accessToken(),
-                userLoginResponse.tokens().refreshToken(),
+                result.tokens().accessToken(),
+                result.tokens().refreshToken(),
                 response,
                 request.rememberMe()
         );
 
-        return ResponseEntity.ok(userLoginResponse);
+        return ResponseEntity.ok(result.user());
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<RefreshTokenResponse> refreshToken(
+    public ResponseEntity<Void> refreshToken(
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        String refreshToken = null;
-        if (request.getCookies() != null) {
-            for (Cookie c : request.getCookies()) {
-                if ("refresh_token".equals(c.getName())) {
-                    refreshToken = c.getValue();
-                    break;
-                }
-            }
-        }
+        String refreshToken = Arrays.stream(Optional.ofNullable(request.getCookies()).orElse(new Cookie[0]))
+                .filter(c -> "refresh_token".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
 
         if (refreshToken == null) {
             throw new BadCredentialsException("Refresh token not found");
@@ -94,7 +99,7 @@ public class AuthController {
                 refreshResponse.rememberMe()
         );
 
-        return ResponseEntity.ok(refreshResponse);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/verify-email")
@@ -117,57 +122,66 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        String accessToken = null;
-        String refreshToken = null;
+        Cookie[] cookies = Optional.ofNullable(request.getCookies()).orElse(new Cookie[0]);
 
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("jwt_token".equals(cookie.getName())) {
-                    accessToken = cookie.getValue();
-                }
-                if ("refresh_token".equals(cookie.getName())) {
-                    refreshToken = cookie.getValue();
-                }
-            }
+        String accessToken = Arrays.stream(cookies)
+                .filter(c -> "access_token".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+
+        String refreshToken = Arrays.stream(cookies)
+                .filter(c -> "refresh_token".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+
+        if (refreshToken == null && accessToken == null) {
+            clearCookie(response, "access_token", "/");
+            clearCookie(response, "refresh_token", "/api/auth/refresh-token");
+            return ResponseEntity.noContent().build();
         }
 
         authService.logout(refreshToken, accessToken);
 
-        clearCookie(response, "jwt_token");
-        clearCookie(response, "refresh_token");
+        clearCookie(response, "access_token", "/");
+        clearCookie(response, "refresh_token", "/api/auth/refresh-token");
 
         return ResponseEntity.noContent().build();
     }
 
-    private void clearCookie(HttpServletResponse response, String name) {
-        Cookie cookie = new Cookie(name, null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        cookie.setAttribute("SameSite", "None");
-        response.addCookie(cookie);
+    private void clearCookie(HttpServletResponse response, String name, String path) {
+        ResponseCookie cookie = ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path(path)
+                .maxAge(Duration.ZERO)
+                .sameSite(cookieSameSite)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
     private void generateCookies(String accessToken, String refreshToken, HttpServletResponse response, boolean rememberMe) {
-        Cookie accessCookie = new Cookie("jwt_token",
-                accessToken);
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(cookieSecure);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(expirationJwt / 1000);
-        accessCookie.setAttribute("SameSite", "None");
-        response.addCookie(accessCookie);
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(Duration.ofMillis(expirationJwt))
+                .sameSite(cookieSameSite)
+                .build();
 
-        int rememberMeMaxAge = rememberMe ? (int) (rememberMeExpirationMs / 1000) : (int) (refreshExpirationMs / 1000);
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
-        Cookie refreshCookie = new Cookie("refresh_token",
-                refreshToken);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(cookieSecure);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(rememberMeMaxAge);
-        refreshCookie.setAttribute("SameSite", "None");
-        response.addCookie(refreshCookie);
+        long rememberMeExpiration = rememberMe ? rememberMeExpirationMs : refreshExpirationMs;
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/api/auth/refresh-token")
+                .maxAge(Duration.ofMillis(rememberMeExpiration))
+                .sameSite(cookieSameSite)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
     }
 }

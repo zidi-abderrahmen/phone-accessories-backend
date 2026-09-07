@@ -1,5 +1,6 @@
 package com.ia.backend.user.service;
 
+import com.ia.backend.user.dto.login.LoginResult;
 import com.ia.backend.user.password.dto.ForgotPasswordRequest;
 import com.ia.backend.user.password.dto.ResetPasswordRequest;
 import com.ia.backend.user.verification.entity.EmailVerification;
@@ -10,7 +11,6 @@ import com.ia.backend.user.repository.RefreshTokenRepository;
 import com.ia.backend.user.password.entity.ResetPassword;
 import com.ia.backend.user.password.repository.ResetPasswordRepository;
 import com.ia.backend.user.dto.login.UserLoginRequest;
-import com.ia.backend.user.dto.login.UserLoginResponse;
 import com.ia.backend.user.dto.register.UserRegisterRequest;
 import com.ia.backend.user.dto.response.UserResponse;
 import com.ia.backend.user.verification.dto.VerifyEmailRequest;
@@ -59,6 +59,7 @@ public class AuthService {
     private final TokenHasherUtils tokenHasher;
     private final ResetPasswordRepository resetPasswordRepository;
     private final TokenService tokenService;
+    private final SendVerificationLink sendVerificationLink;
 
     @Value("${application.frontend.url}")
     private String baseUrl;
@@ -66,44 +67,30 @@ public class AuthService {
     @Transactional
     public UserResponse register(UserRegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            log.error("Email already exists.");
-            throw new AlreadyExistException("Email already exists.");
+            log.error("An account with this email already exists. Please sign in instead.");
+            throw new AlreadyExistException("An account with this email already exists. Please sign in instead.");
         }
 
         UserRole userRole = userRoleRepository.findByName("USER")
                 .orElseThrow(() -> {
                     log.error("User role not found.");
-                    return new NotFoundException("User role not found.");
+                    return new NotFoundException("You cannot register right now. Please contact support.");
                 });
 
         User newUser = userMapper.toUser(request);
         newUser.setRoles(Set.of(userRole));
         newUser.setPassword(passwordEncoder.encode(request.password()));
 
-        String rawToken = UUID.randomUUID().toString();
-        EmailVerification emailVerification = EmailVerification.builder()
-                .token(tokenHasher.hash(rawToken))
-                .user(newUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(15))
-                .build();
-
-        newUser.setEmailVerification(emailVerification);
-
-        log.info("Saving user: {}", newUser);
-        User savedUser = userRepository.save(newUser);
-
-        String verificationLink = baseUrl + "/verify-email?token=" + rawToken;
-        emailService.sendEmail(
-                savedUser.getEmail(),
-                (savedUser.getFirstName() + " " + savedUser.getLastName()),
-                verificationLink,
+        User savedUser = sendVerificationLink.sendVerificationLink(
+                newUser,
+                "/verify-email?token=",
                 false);
 
-        log.info("Email sent successfully.");
+        log.debug("User registered successfully.");
         return userMapper.toUserResponse(savedUser);
     }
 
-    public UserLoginResponse login(UserLoginRequest request) {
+    public LoginResult login(UserLoginRequest request) {
         log.info("Logging in user with email: {}", request.email());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -130,7 +117,7 @@ public class AuthService {
         UserResponse userResponse = userMapper.toUserResponse(user);
 
         log.info("User logged in successfully.");
-        return new UserLoginResponse(tokenService.issueTokens(user, request.rememberMe()), userResponse);
+        return new LoginResult(tokenService.issueTokens(user, request.rememberMe()), userResponse);
     }
 
     @Transactional
