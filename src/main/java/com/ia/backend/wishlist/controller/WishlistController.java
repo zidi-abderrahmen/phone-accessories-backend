@@ -27,11 +27,11 @@ public class WishlistController {
         return ResponseEntity.status(HttpStatus.CREATED).body(wishlistService.addToWishlist(accessoryId));
     }
 
-    @DeleteMapping("/items/{wishId}")
+    @DeleteMapping("/items/{accessoryId}")
     public ResponseEntity<Void> removeFromWishlist(
-            @PathVariable Long wishId
+            @PathVariable Long accessoryId
     ) {
-        wishlistService.removeFromWishlist(wishId);
+        wishlistService.removeFromWishlist(accessoryId);
         return ResponseEntity.noContent().build();
     }
 
