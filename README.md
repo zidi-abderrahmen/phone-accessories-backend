@@ -9,6 +9,15 @@
 A production-grade REST API powering a **phone accessories e-commerce** platform. It provides a complete online store backend — product catalog, shopping cart, wishlist, orders, reviews, and user authentication — together with an admin area for managing catalog, users, and store analytics.
 
 > **Note:** This repository contains the backend project only.
+> The frontend is available at [phone-accessories-frontend](https://github.com/zidi-abderrahmen/phone-accessories-frontend).
+
+---
+
+<p align="center">
+  <a href="https://phone-accessories-frontend.zd-abderrahmen.workers.dev">🔗 Live Demo</a>
+</p>
+
+---
 
 ## Table of Contents
 
