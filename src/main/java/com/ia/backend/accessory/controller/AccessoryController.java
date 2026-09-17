@@ -15,7 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/accessories") // Don't add '/api' because it's already added in the application.properties
+@RequestMapping("/accessories") // Don't add '/api' because it's already added in the application.yaml
 @RequiredArgsConstructor
 public class AccessoryController {
 
