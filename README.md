@@ -339,6 +339,28 @@ On first startup, the application creates the schema via Flyway and seeds a **su
 
 ## Production Deployment
 
+### Hosting topology
+
+| Component | Platform | Notes |
+|---|---|---|
+| Backend API | **Render** web service (Docker) | Built from the repo's multi-stage `Dockerfile`; listens on Render's `PORT` |
+| Frontend | **Cloudflare Workers** | Static SPA + `/api/*` reverse proxy (`wrangler.jsonc`, `src/worker.ts`) |
+| Database | **Neon** (serverless PostgreSQL 16) | **Not** a Render Postgres add-on — see [Database & backups](#database--backups-neon) |
+| Object storage | ImageKit | Product images |
+| Transactional email | Brevo API | Verification / password-reset mail |
+
+The tiers are independent. The Cloudflare Worker proxies `/api/*` to the Render backend (`API_URL` in `wrangler.jsonc`), and the backend connects out to Neon over TLS.
+
+### Deploy flow
+
+1. Push to `main`.
+2. GitHub Actions (`.github/workflows/ci.yml`) runs `./mvnw clean verify` against an ephemeral `postgres:16` service.
+3. Once CI is green, Render redeploys the web service from the repository (Docker build) — either via auto-deploy on `main` or a manual deploy. Render injects `PORT`; no port needs to be hard-coded.
+4. On boot, **Flyway applies any pending `V*` migrations to Neon before the app serves traffic**. A failed migration aborts startup rather than leaving the schema half-applied.
+5. Health check: point Render's health check path at `GET /api/actuator/health` (returns `200`).
+
+No `render.yaml` blueprint is committed, so service settings (build = Dockerfile, env vars, health-check path, auto-deploy branch) are configured in the Render dashboard.
+
 ### Docker
 
 A multi-stage `Dockerfile` produces a slim JRE 21 runtime image.
@@ -369,6 +391,15 @@ java -jar backend-0.0.1-SNAPSHOT.jar
 
 Production defaults: Hikari pool (max `10`, min `5`), Hibernate JDBC batching (`size 25`, ordered inserts/updates), SQL logging off, and **Swagger disabled**.
 
+### Database & backups (Neon)
+
+The production database is a **Neon** serverless PostgreSQL instance — *not* a Render Postgres add-on. Render's managed-Postgres backup and restore tooling does **not** apply here; durability and recovery are Neon's responsibility.
+
+- **Migrations own the schema.** The schema is managed exclusively by Flyway (`src/main/resources/db/migration`). Never hand-edit the production schema — add a new versioned migration instead, so it replays cleanly on the next deploy.
+- **Point-in-time restore.** Neon keeps a per-project history window and restores data by creating a branch at a chosen point in time. The retention length depends on the Neon plan; confirm the current window in the Neon console for this project.
+- **Recommended practice.** Before a risky migration or data change, create a Neon branch as an instant (copy-on-write) snapshot, and take an on-demand logical dump (`pg_dump`) for retention that outlives the history window or the plan.
+- **Connection string.** Use the TLS JDBC form and Neon's pooled endpoint, e.g. `jdbc:postgresql://<project>-pooler.<region>.aws.neon.tech/<db>?sslmode=require`, and set `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` on Render. Production uses the short env-var names — see the naming note under [Environment Setup](#environment-setup).
+
 ## Continuous Integration
 
 A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and pull request to `main`:
@@ -384,7 +415,9 @@ The workflow currently covers building and testing only. Publishing the Docker i
 
 - **Stateless JWT authentication** — HS256-signed access tokens (expiry configurable, 15 minutes in dev). Tokens are delivered in **`HttpOnly`, `SameSite=Strict`** cookies; the `Secure` flag is configurable.
 - **Refresh-token rotation** — per-user, hashed refresh tokens persisted in the database, revoked on logout, and "peppered" with a server-side secret.
-- **Rate limiting** — Bucket4j enforces **5 requests/minute per client IP** on `login`, `register`, `refresh-token`, `forgot-password`, and `reset-password` (returns `429 Too Many Requests`).
+- **Rate limiting** — Bucket4j enforces **5 requests/minute per client IP** on `login`, `register`, `refresh-token`, `forgot-password`, and `reset-password` (returns `429 Too Many Requests`). Buckets live in an in-memory `ConcurrentHashMap` (`RateLimitingFilter`), so limits are **per instance**, reset on every deploy/restart, and the map is never evicted.
+
+> **Rate-limit trust boundary — Cloudflare-only.** The limiter keys on the **first `X-Forwarded-For` value**, falling back to `request.getRemoteAddr()`. That header is client-controllable, so the limit is only trustworthy while **every request reaches the origin through Cloudflare and the Render origin is not directly reachable**. If the Render URL is public, a client can send a different `X-Forwarded-For` on each request to obtain a fresh bucket (bypassing the limit), or impersonate another IP to exhaust its bucket. Keep the origin Cloudflare-only (Cloudflare Tunnel, or ingress restricted to Cloudflare egress) and, ideally, have the Worker overwrite `X-Forwarded-For`/`X-Real-IP` from `CF-Connecting-IP` — dropping any client-supplied value — and prefer that trusted header on the backend.
 - **Role-based access control** — method-level authorization with `USER`, `ADMIN`, and `SUPER_ADMIN` roles. Actuator endpoints beyond `/health` and the admin dashboard require `ADMIN`/`SUPER_ADMIN`.
 - **Input validation** — Bean Validation on every request DTO; centralized `GlobalExceptionHandler` returns consistent error responses.
 - **Concurrency safety** — `@Version`-based optimistic locking on users, accessories, and roles prevents lost updates.
