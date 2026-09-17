@@ -53,7 +53,23 @@ class AuthFlowIntegrationTest extends IntegrationTestBase {
                         .content(objectMapper.writeValueAsString(
                                 new UserRegisterRequest("Jane", "Doe", uniqueEmail("weak"), "short"))))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.password").exists());
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.path").value("/auth/register"))
+                .andExpect(jsonPath("$.fieldErrors.password").exists());
+    }
+
+    @Test
+    void register_withMalformedJson_returnsUnified400Envelope() throws Exception {
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ not-valid-json "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.path").value("/auth/register"));
     }
 
     @Test

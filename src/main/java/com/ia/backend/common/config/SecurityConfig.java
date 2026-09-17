@@ -1,7 +1,9 @@
 package com.ia.backend.common.config;
 
+import com.ia.backend.common.exception.ApiErrorResponse;
 import com.ia.backend.common.security.JwtAuthenticationFilter;
 import com.ia.backend.common.security.RateLimitingFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -10,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -26,6 +29,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import tools.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
@@ -37,6 +43,7 @@ public class SecurityConfig {
     private final RateLimitingFilter rateLimitingFilter;
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
+    private final ObjectMapper objectMapper;
 
     @Bean
     @Order(1)
@@ -145,16 +152,24 @@ public class SecurityConfig {
 
     private void exceptionHandlingConfigurer(ExceptionHandlingConfigurer<HttpSecurity> exception) {
         exception
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write("{\"error\":\"Unauthorized\"}");
-                })
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write("{\"error\":\"Forbidden\"}");
-                });
+                .authenticationEntryPoint((request, response, authException) -> writeError(
+                        request, response, HttpStatus.UNAUTHORIZED,
+                        "Authentication is required to access this resource."))
+                .accessDeniedHandler((request, response, accessDeniedException) -> writeError(
+                        request, response, HttpStatus.FORBIDDEN,
+                        "You do not have permission to access this resource."));
+    }
+
+    /**
+     * Rejections raised inside the filter chains (before MVC) are serialized with the same
+     * {@link ApiErrorResponse} envelope as the {@code @ControllerAdvice}.
+     */
+    private void writeError(HttpServletRequest request, HttpServletResponse response,
+            HttpStatus status, String message) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        objectMapper.writeValue(response.getOutputStream(),
+                ApiErrorResponse.of(status, message, request.getRequestURI()));
     }
 
     @Bean

@@ -5,6 +5,7 @@ import org.springframework.http.MediaType;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -31,7 +32,11 @@ class PublicChainSecurityIntegrationTest extends IntegrationTestBase {
         mockMvc.perform(post("/categories")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CATEGORY_BODY))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.error").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.path").value("/categories"));
     }
 
     @Test
@@ -48,5 +53,15 @@ class PublicChainSecurityIntegrationTest extends IntegrationTestBase {
     @Test
     void endpointsOutsideThePublicChain_stillRequireAuthentication() throws Exception {
         mockMvc.perform(get("/orders")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void unauthenticatedRejections_useTheUnifiedErrorEnvelope() throws Exception {
+        mockMvc.perform(get("/orders"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.error").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.path").value("/orders"));
     }
 }
