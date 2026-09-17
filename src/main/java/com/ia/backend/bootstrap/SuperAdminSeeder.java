@@ -26,12 +26,9 @@ public class SuperAdminSeeder {
             @Value("${application.super_admin.password}") String password
     ) {
         return args -> {
-            UserRole superAdminRole = userRoleRepository.findByName("SUPER_ADMIN")
-                    .orElseGet(() -> userRoleRepository.save(
-                            UserRole.builder()
-                                    .name("SUPER_ADMIN")
-                                    .build()
-                    ));
+            findOrCreateRole(userRoleRepository, "USER");
+            findOrCreateRole(userRoleRepository, "ADMIN");
+            UserRole superAdminRole = findOrCreateRole(userRoleRepository, "SUPER_ADMIN");
 
             if (!userRepository.existsByEmail(email)) {
                 User superAdmin = User.builder()
@@ -46,5 +43,14 @@ public class SuperAdminSeeder {
                 userRepository.save(superAdmin);
             }
         };
+    }
+
+    private static UserRole findOrCreateRole(UserRoleRepository userRoleRepository, String name) {
+        return userRoleRepository.findByName(name)
+                .orElseGet(() -> userRoleRepository.save(
+                        UserRole.builder()
+                                .name(name)
+                                .build()
+                ));
     }
 }

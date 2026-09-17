@@ -1,0 +1,59 @@
+application:
+  openapi:
+    title: "Phone Accessories API"
+    version: "test"
+    description: "API for Phone Accessories E-commerce (integration tests)"
+    name: "Integration Test"
+    email: "test@example.com"
+
+  security:
+    jwt:
+      secret: cGhvbmUtYWNjZXNzb3JpZXMtaW50ZWdyYXRpb24tdGVzdC1qd3Qtc2lnbmluZy1zZWNyZXQtMjAyNg==
+      expiration: 3600000
+      refresh-expiration: 604800000
+      remember-me-expiration: 2592000000
+
+    cookies:
+      secure: false
+      same-site: Strict
+
+    rate-limit:
+      enabled: false
+
+  frontend:
+    url: "http://localhost:4200"
+
+  token:
+    pepper: "integration-test-token-pepper-hmac-sha256"
+
+  super_admin:
+    first_name: Test
+    last_name: Admin
+    email: super.admin@test.example
+    password: SuperAdmin123
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/phone_accessories_test
+    username: abdo
+    password: password
+
+  jpa:
+    show-sql: false
+
+app:
+  mail:
+    api-key: test-mail-api-key
+    from: no-reply@test.example
+    from-name: Phone Accessories (test)
+
+cors:
+  allowed-origins: "http://localhost:4200"
+
+imagekit:
+  private-key: test-imagekit-private-key
+
+logging:
+  level:
+    org.flywaydb: WARN
+    org.springframework.security: WARN
