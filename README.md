@@ -57,7 +57,7 @@ The service is container-ready, ships with a Flyway-managed database schema, and
 - Persistent user **cart** — add, update quantity, remove items, clear cart
 - **Wishlist** — save accessories for later, per-user and unique per accessory
 - **Reviews** — rate accessories (1–5) with comments; owners can edit or delete their reviews
-- **Orders** — checkout from cart with shipping details, payment method, and shipping method; total auto-computed with shipping fee (Standard `$7` / Express `$15` per line); stock is validated and decremented atomically
+- **Orders** — checkout from cart with shipping details, payment method, and shipping method; total auto-computed with shipping fee (Standard `$7` / Express `$15`); stock is validated and decremented atomically
 - Order **cancellation** (only while `PENDING`) and **deletion** (only when `CANCELLED`) — both restore stock automatically
 - Real-time stock safety with **optimistic locking** (`@Version`)
 

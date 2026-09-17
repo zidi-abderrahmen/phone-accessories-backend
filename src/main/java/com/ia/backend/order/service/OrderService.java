@@ -99,16 +99,15 @@ public class OrderService {
 
         order.setItems(orderItems);
 
-        int fee = (request.shippingMethod() == ShippingMethod.STANDARD) ? 7 : 15;
-
-        BigDecimal totalAmount = orderItems.stream()
+        BigDecimal subtotal = orderItems.stream()
                 .map(item -> item.getUnitPrice()
-                        .multiply(BigDecimal.valueOf(item.getQuantity()))
-                        .add(BigDecimal.valueOf(fee))
-                )
+                        .multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        order.setTotalAmount(totalAmount);
+        BigDecimal fee = BigDecimal.valueOf(
+                request.shippingMethod() == ShippingMethod.STANDARD ? 7 : 15);
+
+        order.setTotalAmount(subtotal.add(fee));
 
         Order savedOrder = orderRepository.save(order);
         cart.getCartItems().clear();
