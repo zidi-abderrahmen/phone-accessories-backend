@@ -9,11 +9,15 @@ import com.ia.backend.common.enums.OrderStatus;
 import com.ia.backend.order.dto.OrderRequest;
 import com.ia.backend.order.dto.OrderResponse;
 import com.ia.backend.order.enums.PaymentMethod;
+import com.ia.backend.order.enums.PaymentStatus;
 import com.ia.backend.order.enums.ShippingMethod;
+import com.ia.backend.order.payment.MockPaymentGateway;
+import com.ia.backend.order.payment.PaymentResult;
 import com.ia.backend.order.repository.OrderRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
@@ -21,6 +25,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,6 +45,9 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
     @Autowired
     private OrderRepository orderRepository;
 
+    @MockitoSpyBean
+    private MockPaymentGateway paymentGateway;
+
     @Test
     void createOrder_chargesFlatShippingFee_andDecrementsStock() throws Exception {
         Accessory accessory = createAccessory("50.00", 3);
@@ -50,6 +59,9 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
         // subtotal 2 x 50.00 = 100.00 plus a single flat standard fee of 7.00
         assertThat(order.totalAmount()).isEqualByComparingTo("107.00");
         assertThat(order.status()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.paymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(order.paymentReference()).isNull();
+        assertThat(order.paidAt()).isNull();
         assertThat(order.items()).hasSize(1);
         order.items().forEach(item -> {
             assertThat(item.quantity()).isEqualTo(2);
@@ -72,6 +84,62 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void createOrder_withOnlinePayment_isMarkedPaidWithReference() throws Exception {
+        Accessory accessory = createAccessory("20.00", 5);
+        Session session = registerVerifyAndLogin(uniqueEmail("card"));
+
+        addToCart(session, accessory.getId(), 1);
+        OrderResponse order = placeOrder(session, PaymentMethod.CREDIT_CARD, ShippingMethod.STANDARD);
+
+        assertThat(order.paymentStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(order.paymentReference()).startsWith("MOCK-");
+        assertThat(order.paidAt()).isNotNull();
+        assertThat(order.status()).isEqualTo(OrderStatus.PENDING);
+    }
+
+    @Test
+    void cancelPaidOrder_marksPaymentRefunded() throws Exception {
+        Accessory accessory = createAccessory("20.00", 5);
+        Session session = registerVerifyAndLogin(uniqueEmail("refund"));
+
+        addToCart(session, accessory.getId(), 1);
+        OrderResponse order = placeOrder(session, PaymentMethod.PAYPAL, ShippingMethod.STANDARD);
+        assertThat(order.paymentStatus()).isEqualTo(PaymentStatus.PAID);
+
+        mockMvc.perform(put("/orders/" + order.id() + "/cancel")
+                        .cookie(session.accessToken()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/orders/" + order.id()).cookie(session.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.paymentStatus").value("REFUNDED"));
+    }
+
+    @Test
+    void createOrder_whenPaymentDeclined_returns400AndCreatesNoOrder() throws Exception {
+        Accessory accessory = createAccessory("20.00", 3);
+        Session session = registerVerifyAndLogin(uniqueEmail("declined"));
+
+        addToCart(session, accessory.getId(), 2);
+
+        doReturn(PaymentResult.failed())
+                .when(paymentGateway).charge(any(PaymentMethod.class), any());
+
+        mockMvc.perform(post("/orders")
+                        .cookie(session.accessToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(orderJson(PaymentMethod.CREDIT_CARD, ShippingMethod.STANDARD)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Payment was declined. Please try another payment method."));
+
+        mockMvc.perform(get("/orders").cookie(session.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
     void createOrder_fromEmptyCart_returns400() throws Exception {
         Accessory accessory = createAccessory("10.00", 5);
         Session session = registerVerifyAndLogin(uniqueEmail("empty-cart"));
@@ -85,7 +153,7 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
         mockMvc.perform(post("/orders")
                         .cookie(session.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(orderJson(ShippingMethod.STANDARD)))
+                        .content(orderJson(PaymentMethod.CASH_ON_DELIVERY, ShippingMethod.STANDARD)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -103,7 +171,7 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
         mockMvc.perform(post("/orders")
                         .cookie(session.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(orderJson(ShippingMethod.STANDARD)))
+                        .content(orderJson(PaymentMethod.CASH_ON_DELIVERY, ShippingMethod.STANDARD)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -114,7 +182,7 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
         mockMvc.perform(post("/orders")
                         .cookie(session.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(orderJson(ShippingMethod.STANDARD)))
+                        .content(orderJson(PaymentMethod.CASH_ON_DELIVERY, ShippingMethod.STANDARD)))
                 .andExpect(status().isNotFound());
     }
 
@@ -207,10 +275,16 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
     }
 
     private OrderResponse placeOrder(Session session, ShippingMethod shippingMethod) throws Exception {
+        return placeOrder(session, PaymentMethod.CASH_ON_DELIVERY, shippingMethod);
+    }
+
+    private OrderResponse placeOrder(
+            Session session, PaymentMethod paymentMethod, ShippingMethod shippingMethod)
+            throws Exception {
         MvcResult result = mockMvc.perform(post("/orders")
                         .cookie(session.accessToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(orderJson(shippingMethod)))
+                        .content(orderJson(paymentMethod, shippingMethod)))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -218,7 +292,8 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
         return objectMapper.readValue(result.getResponse().getContentAsString(), OrderResponse.class);
     }
 
-    private String orderJson(ShippingMethod shippingMethod) throws Exception {
+    private String orderJson(PaymentMethod paymentMethod, ShippingMethod shippingMethod)
+            throws Exception {
         return objectMapper.writeValueAsString(new OrderRequest(
                 "Jane Doe",
                 "jane@example.com",
@@ -227,7 +302,7 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
                 "Tunis",
                 "1000",
                 "Tunisia",
-                PaymentMethod.CASH_ON_DELIVERY,
+                paymentMethod,
                 shippingMethod,
                 ""
         ));

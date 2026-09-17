@@ -3,11 +3,13 @@ package com.ia.backend.order.entity;
 import com.ia.backend.user.entity.User;
 import com.ia.backend.common.enums.OrderStatus;
 import com.ia.backend.order.enums.PaymentMethod;
+import com.ia.backend.order.enums.PaymentStatus;
 import com.ia.backend.order.enums.ShippingMethod;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity @Table(name = "orders")
@@ -55,6 +57,16 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private PaymentMethod paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private PaymentStatus paymentStatus;
+
+    @Column(length = 100)
+    private String paymentReference;
+
+    @Column
+    private LocalDateTime paidAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)

@@ -7,11 +7,15 @@ import com.ia.backend.user.entity.User;
 import com.ia.backend.cart.entity.Cart;
 import com.ia.backend.cart.entity.CartItem;
 import com.ia.backend.common.enums.OrderStatus;
+import com.ia.backend.order.enums.PaymentMethod;
+import com.ia.backend.order.enums.PaymentStatus;
 import com.ia.backend.order.enums.ShippingMethod;
 import com.ia.backend.order.entity.Order;
 import com.ia.backend.order.entity.OrderItem;
 import com.ia.backend.common.exception.NotFoundException;
 import com.ia.backend.order.mapper.OrderMapper;
+import com.ia.backend.order.payment.MockPaymentGateway;
+import com.ia.backend.order.payment.PaymentResult;
 import com.ia.backend.cart.repository.CartRepository;
 import com.ia.backend.order.repository.OrderRepository;
 import com.ia.backend.user.service.UserService;
@@ -35,6 +39,7 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final UserService userService;
     private final OrderMapper orderMapper;
+    private final MockPaymentGateway paymentGateway;
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getMyOrdersHistory() {
@@ -109,6 +114,21 @@ public class OrderService {
 
         order.setTotalAmount(subtotal.add(fee));
 
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        if (request.paymentMethod() != PaymentMethod.CASH_ON_DELIVERY) {
+            PaymentResult payment = paymentGateway.charge(
+                    request.paymentMethod(), order.getTotalAmount());
+
+            if (payment.status() == PaymentStatus.FAILED) {
+                throw new BadRequestException(
+                        "Payment was declined. Please try another payment method.");
+            }
+
+            order.setPaymentStatus(payment.status());
+            order.setPaymentReference(payment.reference());
+            order.setPaidAt(payment.paidAt());
+        }
+
         Order savedOrder = orderRepository.save(order);
         cart.getCartItems().clear();
         cartRepository.save(cart);
@@ -129,6 +149,12 @@ public class OrderService {
         });
 
         order.setStatus(OrderStatus.CANCELLED);
+
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            log.info("Refunding mock payment for cancelled order {} (reference={})",
+                    order.getId(), order.getPaymentReference());
+            order.setPaymentStatus(PaymentStatus.REFUNDED);
+        }
     }
 
     @Transactional

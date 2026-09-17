@@ -16,5 +16,9 @@ public interface OrderMapper {
 
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "paymentStatus", ignore = true)
+    @Mapping(target = "paymentReference", ignore = true)
+    @Mapping(target = "paidAt", ignore = true)
     Order toEntity(OrderRequest request);
 }

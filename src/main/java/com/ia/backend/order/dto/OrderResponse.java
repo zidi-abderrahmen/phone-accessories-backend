@@ -2,9 +2,11 @@ package com.ia.backend.order.dto;
 
 import com.ia.backend.common.enums.OrderStatus;
 import com.ia.backend.order.enums.PaymentMethod;
+import com.ia.backend.order.enums.PaymentStatus;
 import com.ia.backend.order.enums.ShippingMethod;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 public record OrderResponse(
@@ -21,6 +23,10 @@ public record OrderResponse(
         String customerCountry,
 
         PaymentMethod paymentMethod,
+        PaymentStatus paymentStatus,
+        String paymentReference,
+        LocalDateTime paidAt,
+
         OrderStatus status,
         ShippingMethod shippingMethod,
 
