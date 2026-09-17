@@ -65,18 +65,29 @@ public class SecurityConfig {
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/reviews/accessory/**",
-                                "/reviews/accessory/**"
+                                "/api/auth/login", "/auth/login",
+                                "/api/auth/register", "/auth/register",
+                                "/api/auth/refresh-token", "/auth/refresh-token",
+                                "/api/auth/verify-email", "/auth/verify-email",
+                                "/api/auth/forgot-password", "/auth/forgot-password",
+                                "/api/auth/reset-password", "/auth/reset-password",
+                                "/error"
                         ).permitAll()
 
                         .requestMatchers(
-                                "/api/reviews/accessory/**",
-                                "/reviews/accessory/**"
-                        ).authenticated()
+                                HttpMethod.GET,
+                                "/api/categories", "/categories",
+                                "/api/categories/*/accessories", "/categories/*/accessories",
+                                "/api/categories/*", "/categories/*",
+                                "/api/accessories", "/accessories",
+                                "/api/accessories/*", "/accessories/*",
+                                "/api/accessories/search", "/accessories/search",
+                                "/api/reviews/accessory/**", "/reviews/accessory/**"
+                        ).permitAll()
 
-
-                        .anyRequest().permitAll()
+                        // Writes on these paths (admin-only mutations, review creation, ...) must
+                        // never be public; the explicit HTTP-method matcher above is the allowlist.
+                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(this::exceptionHandlingConfigurer);
         return http.build();
