@@ -32,6 +32,7 @@ A production-grade REST API powering a **phone accessories e-commerce** platform
 - [Environment Setup](#environment-setup)
 - [Running Locally](#running-locally)
 - [Production Deployment](#production-deployment)
+- [Continuous Integration](#continuous-integration)
 - [Security](#security)
 - [Testing](#testing)
 - [Roadmap](#roadmap)
@@ -94,7 +95,7 @@ The service is container-ready, ships with a Flyway-managed database schema, and
 | Build tool | Maven (wrapper included) |
 | Database | PostgreSQL + Spring Data JPA (Hibernate) |
 | Migrations | Flyway |
-| Security | Spring Security, JWT (jjwt 0.13.0), OAuth2 (Google, dev profile) |
+| Security | Spring Security, JWT (jjwt 0.13.0); OAuth2 (Google client config stub in dev profile — not wired up) |
 | Validation | Spring Boot Starter Validation (Bean Validation) |
 | API docs | SpringDoc OpenAPI (Swagger UI) 3.0.3 |
 | Object mapping | MapStruct 1.6.3 |
@@ -207,11 +208,11 @@ All endpoints are served under the **`/api`** context path.
 | `GET` | `/api/categories` | Public | List categories (paginated) |
 | `GET` | `/api/categories/{id}` | Public | Get a category |
 | `GET` | `/api/categories/{id}/accessories` | Public | Accessories for a category |
-| `POST` / `PUT` / `DELETE` | `/api/categories...` | Admin / Super | Category management |
+| `POST` / `PUT` / `DELETE` | `/api/categories...` | Admin / Super (DELETE Super only) | Category management |
 | `GET` | `/api/accessories` | Public | List accessories (paginated) |
 | `GET` | `/api/accessories/{id}` | Public | Get an accessory |
 | `GET` | `/api/accessories/search` | Public | Filter by `categoryId`, `keyword`, `minPrice`, `maxPrice`, `inStock` |
-| `POST` / `PUT` / `DELETE` | `/api/accessories...` | Admin / Super | Accessory management |
+| `POST` / `PUT` / `DELETE` | `/api/accessories...` | Admin / Super (DELETE Super only) | Accessory management |
 | `GET` | `/api/reviews/accessory/{id}` | Public | Reviews for an accessory |
 | `POST` | `/api/reviews/accessory/{id}` | Authenticated | Add a review (rating 1–5) |
 | `PUT` / `DELETE` | `/api/reviews/{id}` | Authenticated (owner) | Update / delete own review |
@@ -227,7 +228,7 @@ All endpoints are served under the **`/api`** context path.
 | `DELETE` | `/api/carts/my-cart` | Authenticated | Clear cart |
 | `GET` | `/api/wishlist` | Authenticated | Get wishlist |
 | `POST` | `/api/wishlist/items/{accessoryId}` | Authenticated | Add to wishlist |
-| `DELETE` | `/api/wishlist/items/{wishId}` / `/api/wishlist/items` | Authenticated | Remove item / clear wishlist |
+| `DELETE` | `/api/wishlist/items/{accessoryId}` / `/api/wishlist/items` | Authenticated | Remove item / clear wishlist |
 | `GET` | `/api/orders` | Authenticated | My order history |
 | `GET` | `/api/orders/{id}` | Authenticated | Order detail |
 | `POST` | `/api/orders` | Authenticated | Place order from cart |
@@ -310,11 +311,13 @@ Configuration is profile-based (**`dev`** is the default profile).
 | `APPLICATION_SUPER_ADMIN_*` | Yes | Bootstrapped super-admin credentials |
 | `APPLICATION_FRONTEND_URL` | Yes | Allowed frontend origin |
 | `APPLICATION_TOKEN_PEPPER` | Yes | 64-character hex key signing refresh tokens |
+| `APP_MAIL_API_KEY` | Yes | Brevo email API key |
 | `APP_MAIL_FROM` / `APP_MAIL_FROM_NAME` | Yes | Email sender |
 | `APPLICATION_OPENAPI_*` | No | Swagger metadata |
 | `IMAGEKIT_PRIVATE_KEY` | Yes | ImageKit private key |
 | `CORS_ALLOWED_ORIGINS` | Yes | Comma-separated allowed origins |
-| `SPRING_MAIL_*` / `APP_MAIL_HOST` / `APP_MAIL_PORT` | Yes | Mail server (SMTP / API) |
+
+> **Note on naming conventions.** Local dev, the `.env.docker` example, and the CI workflow use the long `SPRING_*` / `APPLICATION_*` / `APP_MAIL_*` names above. The production profile (`application-prod.yaml`) reads shorter names instead: `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `JWT_SECRET`, `JWT_EXPIRATION_MS`, `JWT_REFRESH_EXPIRATION_MS`, `JWT_REMEMBER_ME_EXPIRATION_MS`, `COOKIES_SECURE`, `COOKIES_SAME_SITE`, `SUPER_ADMIN_*`, `FRONTEND_URL`, `TOKEN_PEPPER`, `MAIL_API_KEY`, `MAIL_FROM`, `MAIL_FROM_NAME`, `OPENAPI_*`, `CORS_ALLOWED_ORIGINS`, `IMAGEKIT_PRIVATE_KEY`.
 
 > The committed `application-dev.yaml` is **gitignored** and may contain real local credentials. Never commit secrets. Export everything as environment variables in production (per `application-prod.yaml`).
 
@@ -348,7 +351,7 @@ docker build -t phone-accessories-backend .
 docker run -p 10000:10000 --env-file .env.docker phone-accessories-backend
 ```
 
-The image listens on the `PORT` env var (default `10000`) so it can be deployed directly to platforms such as **Render** without code changes.
+The image listens on the `PORT` env var. The application default is `8080` (`server.port: ${PORT:8080}` in `application.yaml`); the `Dockerfile` additionally declares `EXPOSE 10000`, which is the port **Render** injects via `PORT` by default. Match the port mapping to the value of `PORT` — e.g. with Render's default the example above uses `10000`.
 
 ### Environment-driven production profile
 
@@ -365,6 +368,17 @@ java -jar backend-0.0.1-SNAPSHOT.jar
 ```
 
 Production defaults: Hikari pool (max `10`, min `5`), Hibernate JDBC batching (`size 25`, ordered inserts/updates), SQL logging off, and **Swagger disabled**.
+
+## Continuous Integration
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and pull request to `main`:
+
+- **Trigger** — `push` and `pull_request` on the `main` branch
+- **Job** — `build-and-test`: checks out the code, sets up **JDK 21 (Temurin)** with Maven caching, and runs `./mvnw clean verify`
+- **PostgreSQL service** — a `postgres:16` container is started so the context-load and service tests run against a real database
+- **Environment** — the workflow exports the full set of required configuration variables (datasource, JWT, super-admin, mail, ImageKit, CORS), since the gitignored `application-dev.yaml` is not available in the CI environment
+
+The workflow currently covers building and testing only. Publishing the Docker image and deploying to production are planned follow-ups (see [Roadmap](#roadmap)).
 
 ## Security
 
@@ -395,7 +409,7 @@ Planned and potential enhancements (not yet implemented in this repository):
 - **Payment integration** — wire `CREDIT_CARD` / `PAYPAL` payment methods to a live payment gateway (currently stored as preferences only).
 - **Order status workflow** — admin endpoint to advance orders (`PENDING → PROCESSING → SHIPPED → DELIVERED`).
 - **Full OAuth2 login** — Google OAuth2 client configuration exists in the dev profile; end-to-end social login can be finalized.
-- **Dedicated CI/CD pipeline** — add GitHub Actions for build, tests, and deployment.
+- **Docker image publishing / production CD** — the GitHub Actions workflow already builds and tests the project; extend it to publish the Docker image to a registry and deploy to production.
 
 ## Contributing
 
