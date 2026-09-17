@@ -51,7 +51,7 @@ The service is container-ready, ships with a Flyway-managed database schema, and
 ### Catalog
 - CRUD for **categories** and **accessories** (title, description, price, stock, unique product code, image)
 - **Search & filter** accessories by category, keyword, price range, and stock availability
-- Paginated listings throughout the catalog
+- Paginated listings throughout the catalog — default page size `20`, capped at `100`, with per-request validation of `page`/`size`
 
 ### Shopping experience
 - Persistent user **cart** — add, update quantity, remove items, clear cart
@@ -59,7 +59,8 @@ The service is container-ready, ships with a Flyway-managed database schema, and
 - **Reviews** — rate accessories (1–5) with comments; owners can edit or delete their reviews
 - **Orders** — checkout from cart with shipping details, payment method, and shipping method; total auto-computed with shipping fee (Standard `$7` / Express `$15`); stock is validated and decremented atomically
 - Order **cancellation** (only while `PENDING`) and **deletion** (only when `CANCELLED`) — both restore stock automatically
-- Real-time stock safety with **optimistic locking** (`@Version`)
+- Real-time stock safety with **optimistic locking** (`@Version`) and a database-level `CHECK (stock >= 0)`
+- **Mock payment flow** — `CREDIT_CARD` and `PAYPAL` orders run through a `MockPaymentGateway` that records `paymentStatus` (`PENDING` / `PAID` / `FAILED` / `REFUNDED`), a gateway reference, and `paidAt`; cash-on-delivery stays `PENDING`. Cancelling a paid order marks it `REFUNDED`, and the storefront labels the step as a demo.
 
 ### Accounts & security
 - Registration with **email verification** (verification links sent via the Brevo email API, asynchronously)
@@ -179,7 +180,7 @@ src/main/resources/
 ├── application.yaml               # Common configuration
 ├── application-dev.yaml           # Local dev profile (gitignored; template: application-dev.yaml.example)
 ├── application-prod.yaml          # Production profile (env-var driven)
-└── db/migration/                  # Flyway SQL migrations (V1–V6)
+└── db/migration/                  # Flyway SQL migrations (V1–V8)
 ```
 
 ## API Reference
@@ -285,7 +286,7 @@ Then fill in the values in both files (database credentials, JWT secret, mail AP
 CREATE DATABASE phone_accessories;
 ```
 
-Flyway will apply the schema (`V1`–`V6`) automatically on startup.
+Flyway will apply the schema (`V1`–`V8`) automatically on startup.
 
 ### 3. Build
 
@@ -396,6 +397,7 @@ Production defaults: Hikari pool (max `10`, min `5`), Hibernate JDBC batching (`
 The production database is a **Neon** serverless PostgreSQL instance — *not* a Render Postgres add-on. Render's managed-Postgres backup and restore tooling does **not** apply here; durability and recovery are Neon's responsibility.
 
 - **Migrations own the schema.** The schema is managed exclusively by Flyway (`src/main/resources/db/migration`). Never hand-edit the production schema — add a new versioned migration instead, so it replays cleanly on the next deploy.
+- **Corrections ship as new migrations.** Applied migrations are immutable, so fixes land as a new versioned file instead of rewriting history — `V7` drops a duplicated email unique constraint, adds `CHECK (stock >= 0)` / `CHECK (price > 0)`, and indexes foreign-key columns; `V8` adds order payment tracking.
 - **Point-in-time restore.** Neon keeps a per-project history window and restores data by creating a branch at a chosen point in time. The retention length depends on the Neon plan; confirm the current window in the Neon console for this project.
 - **Recommended practice.** Before a risky migration or data change, create a Neon branch as an instant (copy-on-write) snapshot, and take an on-demand logical dump (`pg_dump`) for retention that outlives the history window or the plan.
 - **Connection string.** Use the TLS JDBC form and Neon's pooled endpoint, e.g. `jdbc:postgresql://<project>-pooler.<region>.aws.neon.tech/<db>?sslmode=require`, and set `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` on Render. Production uses the short env-var names — see the naming note under [Environment Setup](#environment-setup).
@@ -406,7 +408,7 @@ A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and pu
 
 - **Trigger** — `push` and `pull_request` on the `main` branch
 - **Job** — `build-and-test`: checks out the code, sets up **JDK 21 (Temurin)** with Maven caching, and runs `./mvnw clean verify`
-- **PostgreSQL service** — a `postgres:16` container is started so the context-load and service tests run against a real database
+- **PostgreSQL service** — a `postgres:16` container is started so the integration and context-load tests run against a real database
 - **Environment** — the workflow exports the full set of required configuration variables (datasource, JWT, super-admin, mail, ImageKit, CORS), since the gitignored `application-dev.yaml` is not available in the CI environment
 
 The workflow currently covers building and testing only. Publishing the Docker image and deploying to production are planned follow-ups (see [Roadmap](#roadmap)).
@@ -415,31 +417,46 @@ The workflow currently covers building and testing only. Publishing the Docker i
 
 - **Stateless JWT authentication** — HS256-signed access tokens (expiry configurable, 15 minutes in dev). Tokens are delivered in **`HttpOnly`, `SameSite=Strict`** cookies; the `Secure` flag is configurable.
 - **Refresh-token rotation** — per-user, hashed refresh tokens persisted in the database, revoked on logout, and "peppered" with a server-side secret.
+- **Explicit public surface** — the filter chain permits anonymous access only to explicitly listed public endpoints (catalog and review reads, the auth flows); every other route requires authentication, with admin routes additionally guarded by role. Verified by `PublicChainSecurityIntegrationTest`.
 - **Rate limiting** — Bucket4j enforces **5 requests/minute per client IP** on `login`, `register`, `refresh-token`, `forgot-password`, and `reset-password` (returns `429 Too Many Requests`). Buckets live in an in-memory `ConcurrentHashMap` (`RateLimitingFilter`), so limits are **per instance**, reset on every deploy/restart, and the map is never evicted.
 
 > **Rate-limit trust boundary — Cloudflare-only.** The limiter keys on the **first `X-Forwarded-For` value**, falling back to `request.getRemoteAddr()`. That header is client-controllable, so the limit is only trustworthy while **every request reaches the origin through Cloudflare and the Render origin is not directly reachable**. If the Render URL is public, a client can send a different `X-Forwarded-For` on each request to obtain a fresh bucket (bypassing the limit), or impersonate another IP to exhaust its bucket. Keep the origin Cloudflare-only (Cloudflare Tunnel, or ingress restricted to Cloudflare egress) and, ideally, have the Worker overwrite `X-Forwarded-For`/`X-Real-IP` from `CF-Connecting-IP` — dropping any client-supplied value — and prefer that trusted header on the backend.
 - **Role-based access control** — method-level authorization with `USER`, `ADMIN`, and `SUPER_ADMIN` roles. Actuator endpoints beyond `/health` and the admin dashboard require `ADMIN`/`SUPER_ADMIN`.
-- **Input validation** — Bean Validation on every request DTO; centralized `GlobalExceptionHandler` returns consistent error responses.
+- **Input validation & unified errors** — Bean Validation on every request DTO; a centralized `GlobalExceptionHandler` maps domain exceptions to a consistent `ApiErrorResponse` (`status`, `message`, `path`) and converts uncaught exceptions into an opaque `500` that never leaks internals.
 - **Concurrency safety** — `@Version`-based optimistic locking on users, accessories, and roles prevents lost updates.
 - **Image safety** — uploads validated for type (JPEG/PNG/WEBP), size (≤ 5 MB), resolution (≤ 25 MP), and decodability before reaching ImageKit.
 
 ## Testing
 
-The project ships a test suite built on Spring Boot test starters (JUnit 5):
+The project ships a JUnit 5 suite covering unit, slice, and full-stack integration tests. Integration tests extend `IntegrationTestBase`, which boots the real Spring context and drives it through `MockMvc` against a PostgreSQL database.
 
-- `BackendApplicationTests` — context-loads smoke test
-- `AccessoryServiceTest` — service-layer unit tests for the accessory module
+**Unit & slice**
+
+- `BackendApplicationTests` — context-load smoke test
+- `AccessoryServiceTest`, `OrderServiceTest` — service-layer logic (flat shipping fee charged once, stock decrement, insufficient-stock rejection)
 - `JwtUtilsTest` — JWT utility tests
+- `GlobalExceptionHandlerTest` — error-envelope mapping, including the opaque `500` catch-all
+- `MockPaymentGatewayTest` — approved / declined / disabled gateway outcomes
+
+**Integration** (`src/test/java/com/ia/backend/integration`)
+
+- `AuthFlowIntegrationTest` — register → verify → login, plus `409` duplicate email, `403` before verification, `401` unauthenticated, and the unified `400` envelope
+- `RefreshTokenRotationIntegrationTest` — rotation invalidates the old token; logout revokes it
+- `OrderFlowIntegrationTest` — checkout with flat shipping, mock-payment status transitions, cancellation/restore, stock validation
+- `StockCompetitionIntegrationTest` — two concurrent orders for the last unit: one succeeds, the other gets `409 Conflict`
+- `PaginationIntegrationTest` — default page size and the `1–100` per-page cap
+- `PublicChainSecurityIntegrationTest` — public catalog reads allowed; writes require auth/admin
 
 ```bash
-./mvnw test
+./mvnw test      # unit + integration — needs a reachable PostgreSQL
+./mvnw verify    # full build; what CI runs (provisioned with a postgres:16 service)
 ```
 
 ## Roadmap
 
 Planned and potential enhancements (not yet implemented in this repository):
 
-- **Payment integration** — wire `CREDIT_CARD` / `PAYPAL` payment methods to a live payment gateway (currently stored as preferences only).
+- **Live payment gateway** — the mock gateway and demo banner already cover the flow end-to-end; replace `MockPaymentGateway` with a real provider for `CREDIT_CARD` / `PAYPAL`.
 - **Order status workflow** — admin endpoint to advance orders (`PENDING → PROCESSING → SHIPPED → DELIVERED`).
 - **Full OAuth2 login** — Google OAuth2 client configuration exists in the dev profile; end-to-end social login can be finalized.
 - **Docker image publishing / production CD** — the GitHub Actions workflow already builds and tests the project; extend it to publish the Docker image to a registry and deploy to production.
