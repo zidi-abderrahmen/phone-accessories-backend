@@ -236,8 +236,18 @@ class OrderFlowIntegrationTest extends IntegrationTestBase {
                         .cookie(session.accessToken()))
                 .andExpect(status().isNoContent());
 
+        int stockAfterCancel = accessoryRepository.findById(accessory.getId())
+                .orElseThrow()
+                .getStock();
+        assertThat(stockAfterCancel).isEqualTo(2);
+
         mockMvc.perform(delete("/orders/" + order.id()).cookie(session.accessToken()))
                 .andExpect(status().isNoContent());
+
+        int stockAfterDelete = accessoryRepository.findById(accessory.getId())
+                .orElseThrow()
+                .getStock();
+        assertThat(stockAfterDelete).isEqualTo(stockAfterCancel);
 
         mockMvc.perform(get("/orders/" + order.id()).cookie(session.accessToken()))
                 .andExpect(status().isNotFound());

@@ -164,11 +164,6 @@ public class OrderService {
                 OrderStatus.CANCELLED,
                 "Cannot delete an order that is already ");
 
-        order.getItems().forEach(item -> {
-            Accessory accessory = item.getAccessory();
-            accessory.setStock(accessory.getStock() + item.getQuantity());
-        });
-
         orderRepository.delete(order);
     }
 

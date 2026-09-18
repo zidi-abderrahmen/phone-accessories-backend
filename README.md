@@ -58,7 +58,7 @@ The service is container-ready, ships with a Flyway-managed database schema, and
 - **Wishlist** — save accessories for later, per-user and unique per accessory
 - **Reviews** — rate accessories (1–5) with comments; owners can edit or delete their reviews
 - **Orders** — checkout from cart with shipping details, payment method, and shipping method; total auto-computed with shipping fee (Standard `$7` / Express `$15`); stock is validated and decremented atomically
-- Order **cancellation** (only while `PENDING`) and **deletion** (only when `CANCELLED`) — both restore stock automatically
+- Order **cancellation** (only while `PENDING`) and **deletion** (only when `CANCELLED`) — cancellation restores stock automatically; deletion just removes the already-cancelled order (no further stock changes)
 - Real-time stock safety with **optimistic locking** (`@Version`) and a database-level `CHECK (stock >= 0)`
 - **Mock payment flow** — `CREDIT_CARD` and `PAYPAL` orders run through a `MockPaymentGateway` that records `paymentStatus` (`PENDING` / `PAID` / `FAILED` / `REFUNDED`), a gateway reference, and `paidAt`; cash-on-delivery stays `PENDING`. Cancelling a paid order marks it `REFUNDED`, and the storefront labels the step as a demo.
 

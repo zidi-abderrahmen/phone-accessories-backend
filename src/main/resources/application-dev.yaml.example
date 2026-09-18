@@ -13,21 +13,29 @@ application:
       refresh-expiration: your_jwt_refresh_expiration_ms
       remember-me-expiration: your_jwt_remember_me_expiration_ms
 
-  super_admin:
-      first_name: your_super_admin_first_name
-      last_name: your_super_admin_last_name
-      email: your_super_admin_email
-      password: your_super_admin_password
-
     cookies:
       secure: false
       same-site: Strict
+
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: your_google_oauth2_client_id
+            client-secret: your_google_oauth2_client_secret
+            scope: "email profile"
 
   frontend:
     url: your_frontend_url
 
   token:
     pepper: your_pepper_token_sha_256_bit_secret_key_here_64_characters_long
+
+  super_admin:
+    first_name: your_super_admin_first_name
+    last_name: your_super_admin_last_name
+    email: your_super_admin_email
+    password: your_super_admin_password
 
 spring:
   datasource:
@@ -51,7 +59,12 @@ springdoc:
     enabled: true
 
 cors:
-  allowed-origins: your_frontend_url(s)
+  allowed-origins: your_frontend_url
+
+logging:
+  level:
+    org.flywaydb: WARN
+    org.springframework.security: WARN
 
 imagekit:
   private-key: your_imagekit_private_key
