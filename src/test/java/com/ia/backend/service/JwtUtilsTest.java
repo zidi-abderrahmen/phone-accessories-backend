@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest
 public class JwtUtilsTest {
 
@@ -15,8 +17,8 @@ public class JwtUtilsTest {
     void testJwt() {
         String token = jwtUtils.generateTokenFromUsername("test@test.com");
 
-        boolean valid = jwtUtils.validateJwtToken(token);
+        String email = jwtUtils.extractUsernameIfValid(token);
 
-        String email = jwtUtils.getUsernameFromJwtToken(token);
+        assertThat(email).isEqualTo("test@test.com");
     }
 }

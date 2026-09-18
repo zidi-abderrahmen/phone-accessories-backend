@@ -36,22 +36,14 @@ public class JwtUtils {
                 .compact();
     }
 
-    public String getUsernameFromJwtToken(String token) {
-        return Jwts.parser()
-                .verifyWith(key())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
-    }
-
-    public boolean validateJwtToken(String authToken) {
+    public String extractUsernameIfValid(String token) {
         try {
-            Jwts.parser()
+            return Jwts.parser()
                     .verifyWith(key())
                     .build()
-                    .parseSignedClaims(authToken);
-            return true;
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject();
         } catch (SecurityException e) {
             log.error("Invalid JWT signature: {}", e.getMessage());
         } catch (MalformedJwtException e) {
@@ -63,6 +55,6 @@ public class JwtUtils {
         } catch (IllegalArgumentException e) {
             log.error("JWT claims string is empty: {}", e.getMessage());
         }
-        return false;
+        return null;
     }
 }
