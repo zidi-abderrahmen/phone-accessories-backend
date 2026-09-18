@@ -33,7 +33,7 @@ A production-grade REST API powering a **phone accessories e-commerce** platform
 - [Environment Setup](#environment-setup)
 - [Running Locally](#running-locally)
 - [Production Deployment](#production-deployment)
-- [Continuous Integration](#continuous-integration)
+- [Continuous Integration & Docker Publishing](#continuous-integration--docker-publishing)
 - [Security](#security)
 - [Testing](#testing)
 - [Roadmap](#roadmap)
@@ -357,12 +357,12 @@ The tiers are independent. The Cloudflare Worker proxies `/api/*` to the Render 
 ### Deploy flow
 
 1. Push to `main`.
-2. GitHub Actions (`.github/workflows/ci.yml`) runs `./mvnw clean verify` against an ephemeral `postgres:16` service.
-3. Once CI is green, Render redeploys the web service from the repository (Docker build) — either via auto-deploy on `main` or a manual deploy. Render injects `PORT`; no port needs to be hard-coded.
+2. GitHub Actions (`.github/workflows/ci.yml`) runs `./mvnw clean verify` against an ephemeral `postgres:16` service and, on a `main` push, builds and publishes the Docker image to GHCR (`publish-image` job).
+3. Render deploys the web service from the repository (Docker build) via the committed `render.yaml` blueprint — auto-deploy on `main`, or a manual deploy. Render injects `PORT`; no port needs to be hard-coded.
 4. On boot, **Flyway applies any pending `V*` migrations to Neon before the app serves traffic**. A failed migration aborts startup rather than leaving the schema half-applied.
-5. Health check: point Render's health check path at `GET /api/actuator/health` (returns `200`).
+5. Render's health check hits `GET /api/actuator/health` (returns `200`) as configured in `render.yaml`.
 
-No `render.yaml` blueprint is committed, so service settings (build = Dockerfile, env vars, health-check path, auto-deploy branch) are configured in the Render dashboard.
+The service is defined by the committed `render.yaml` blueprint (service type, Docker build, auto-deploy branch, and health-check path). Environment *values* are kept out of the blueprint (`sync: false`) and configured in the Render dashboard.
 
 ### Docker
 
@@ -404,16 +404,17 @@ The production database is a **Neon** serverless PostgreSQL instance — *not* a
 - **Recommended practice.** Before a risky migration or data change, create a Neon branch as an instant (copy-on-write) snapshot, and take an on-demand logical dump (`pg_dump`) for retention that outlives the history window or the plan.
 - **Connection string.** Use the TLS JDBC form and Neon's pooled endpoint, e.g. `jdbc:postgresql://<project>-pooler.<region>.aws.neon.tech/<db>?sslmode=require`, and set `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` on Render. Production uses the short env-var names — see the naming note under [Environment Setup](#environment-setup).
 
-## Continuous Integration
+## Continuous Integration & Docker Publishing
 
 A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and pull request to `main`:
 
 - **Trigger** — `push` and `pull_request` on the `main` branch
 - **Job** — `build-and-test`: checks out the code, sets up **JDK 21 (Temurin)** with Maven caching, and runs `./mvnw clean verify`
+- **Job** — `publish-image` (only on `main` pushes, after `build-and-test`): builds the Docker image with BuildKit and pushes it to GHCR as `ghcr.io/zidi-abderrahmen/phone-accessories-backend:main` and `:sha-<sha>` (the workflow has `packages: write`)
 - **PostgreSQL service** — a `postgres:16` container is started so the integration and context-load tests run against a real database
 - **Environment** — the workflow exports the full set of required configuration variables (datasource, JWT, super-admin, mail, ImageKit, CORS), since the gitignored `application-dev.yaml` is not available in the CI environment
 
-The workflow currently covers building and testing only. Publishing the Docker image and deploying to production are planned follow-ups (see [Roadmap](#roadmap)).
+Production deployment is **not** a CI step — Render deploys directly from the repository (`render.yaml` → `Dockerfile`, auto-deploy on `main`). CI ends at testing and publishing the image.
 
 ## Security
 
@@ -460,7 +461,6 @@ Planned and potential enhancements (not yet implemented in this repository):
 
 - **Live payment gateway** — the mock gateway and demo banner already cover the flow end-to-end; replace `MockPaymentGateway` with a real provider for `CREDIT_CARD` / `PAYPAL`.
 - **Full OAuth2 login** — Google OAuth2 client configuration exists in the dev profile; end-to-end social login can be finalized.
-- **Docker image publishing / production CD** — the GitHub Actions workflow already builds and tests the project; extend it to publish the Docker image to a registry and deploy to production.
 
 ## Contributing
 
