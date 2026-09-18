@@ -5,6 +5,8 @@ import com.ia.backend.cart.entity.Cart;
 import com.ia.backend.cart.entity.CartItem;
 import com.ia.backend.cart.repository.CartRepository;
 import com.ia.backend.common.exception.BadRequestException;
+import com.ia.backend.common.exception.NotFoundException;
+import com.ia.backend.common.enums.OrderStatus;
 import com.ia.backend.order.dto.OrderRequest;
 import com.ia.backend.order.enums.PaymentMethod;
 import com.ia.backend.order.enums.ShippingMethod;
@@ -144,6 +146,49 @@ class OrderServiceTest {
                 .hasMessageContaining("Insufficient stock");
 
         verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void advanceOrderStatus_advancesStepByStepToDelivered() {
+        Order order = Order.builder().id(1L).status(OrderStatus.PENDING).build();
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        orderService.advanceOrderStatus(1L);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PROCESSING);
+
+        orderService.advanceOrderStatus(1L);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.SHIPPED);
+
+        orderService.advanceOrderStatus(1L);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.DELIVERED);
+    }
+
+    @Test
+    void advanceOrderStatus_whenAlreadyDelivered_throwsBadRequest() {
+        Order order = Order.builder().id(1L).status(OrderStatus.DELIVERED).build();
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.advanceOrderStatus(1L))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("delivered");
+    }
+
+    @Test
+    void advanceOrderStatus_whenCancelled_throwsBadRequest() {
+        Order order = Order.builder().id(1L).status(OrderStatus.CANCELLED).build();
+        when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
+
+        assertThatThrownBy(() -> orderService.advanceOrderStatus(1L))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("cancelled");
+    }
+
+    @Test
+    void advanceOrderStatus_whenOrderNotFound_throwsNotFound() {
+        when(orderRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> orderService.advanceOrderStatus(99L))
+                .isInstanceOf(NotFoundException.class);
     }
 
     // ---------------------------------------------------------------------

@@ -167,6 +167,25 @@ public class OrderService {
         orderRepository.delete(order);
     }
 
+    @Transactional
+    public OrderResponse advanceOrderStatus(Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+
+        OrderStatus current = order.getStatus();
+        OrderStatus next = switch (current) {
+            case PENDING -> OrderStatus.PROCESSING;
+            case PROCESSING -> OrderStatus.SHIPPED;
+            case SHIPPED -> OrderStatus.DELIVERED;
+            case DELIVERED -> throw new BadRequestException("Order is already delivered");
+            case CANCELLED -> throw new BadRequestException("Cannot advance a cancelled order");
+        };
+
+        order.setStatus(next);
+        log.info("Order {} status advanced {} -> {}", order.getId(), current, next);
+        return orderMapper.toResponse(order);
+    }
+
     private Order getValidatedPendingOrder(Long id, OrderStatus status, String errorMessage) {
         User currentUser = getCurrentUser();
 

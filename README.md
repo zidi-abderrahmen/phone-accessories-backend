@@ -235,6 +235,7 @@ All endpoints are served under the **`/api`** context path.
 | `GET` | `/api/orders/{id}` | Authenticated | Order detail |
 | `POST` | `/api/orders` | Authenticated | Place order from cart |
 | `PUT` | `/api/orders/{id}/cancel` | Authenticated | Cancel (only `PENDING`) |
+| `PATCH` | `/api/orders/{id}/status` | Admin / Super | Advance order status (`PENDING → PROCESSING → SHIPPED → DELIVERED`) |
 | `DELETE` | `/api/orders/{id}` | Authenticated | Delete (only `CANCELLED`) |
 
 ### Admin & Uploads
@@ -458,7 +459,6 @@ The project ships a JUnit 5 suite covering unit, slice, and full-stack integrati
 Planned and potential enhancements (not yet implemented in this repository):
 
 - **Live payment gateway** — the mock gateway and demo banner already cover the flow end-to-end; replace `MockPaymentGateway` with a real provider for `CREDIT_CARD` / `PAYPAL`.
-- **Order status workflow** — admin endpoint to advance orders (`PENDING → PROCESSING → SHIPPED → DELIVERED`).
 - **Full OAuth2 login** — Google OAuth2 client configuration exists in the dev profile; end-to-end social login can be finalized.
 - **Docker image publishing / production CD** — the GitHub Actions workflow already builds and tests the project; extend it to publish the Docker image to a registry and deploy to production.
 
