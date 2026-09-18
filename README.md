@@ -360,7 +360,7 @@ The tiers are independent. The Cloudflare Worker proxies `/api/*` to the Render 
 2. GitHub Actions (`.github/workflows/ci.yml`) runs `./mvnw clean verify` against an ephemeral `postgres:16` service and, on a `main` push, builds and publishes the Docker image to GHCR (`publish-image` job).
 3. Render deploys the web service from the repository (Docker build) via the committed `render.yaml` blueprint — auto-deploy on `main`, or a manual deploy. Render injects `PORT`; no port needs to be hard-coded.
 4. On boot, **Flyway applies any pending `V*` migrations to Neon before the app serves traffic**. A failed migration aborts startup rather than leaving the schema half-applied.
-5. Render's health check hits `GET /api/actuator/health` (returns `200`) as configured in `render.yaml`.
+5. Render's health check hits `GET /api/actuator/health` (returns `200`) as configured in `render.yaml`. In the `prod` profile, health-check *details* are withheld unless the caller is authorized (`management.endpoint.health.show-details: when-authorized`), so the check sees only the `UP` status.
 
 The service is defined by the committed `render.yaml` blueprint (service type, Docker build, auto-deploy branch, and health-check path). Environment *values* are kept out of the blueprint (`sync: false`) and configured in the Render dashboard.
 
