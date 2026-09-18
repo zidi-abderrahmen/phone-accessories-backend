@@ -64,3 +64,8 @@ cors:
 
 imagekit:
   private-key: ${IMAGEKIT_PRIVATE_KEY}
+
+management:
+  endpoint:
+    health:
+      show-details: when-authorized
