@@ -1,0 +1,62 @@
+services:
+  - type: web
+    name: phone-accessories-backend
+    runtime: docker
+    repo: https://github.com/zidi-abderrahmen/phone-accessories-backend
+    branch: main
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/actuator/health
+    envVars:
+      - key: PROFILE
+        value: prod
+      - key: OPENAPI_TITLE
+        sync: false
+      - key: OPENAPI_VERSION
+        sync: false
+      - key: OPENAPI_DESCRIPTION
+        sync: false
+      - key: OPENAPI_NAME
+        sync: false
+      - key: OPENAPI_EMAIL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRATION_MS
+        sync: false
+      - key: JWT_REFRESH_EXPIRATION_MS
+        sync: false
+      - key: JWT_REMEMBER_ME_EXPIRATION_MS
+        sync: false
+      - key: COOKIES_SECURE
+        sync: false
+      - key: COOKIES_SAME_SITE
+        sync: false
+      - key: SUPER_ADMIN_FIRST_NAME
+        sync: false
+      - key: SUPER_ADMIN_LAST_NAME
+        sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      - key: SUPER_ADMIN_PASSWORD
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: TOKEN_PEPPER
+        sync: false
+      - key: MAIL_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_FROM_NAME
+        sync: false
+      - key: IMAGEKIT_PRIVATE_KEY
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
