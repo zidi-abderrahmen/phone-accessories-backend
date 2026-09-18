@@ -144,6 +144,13 @@
             <version>8.19.0</version>
         </dependency>
 
+        <!-- The Caffeine dependency (bounded cache for rate-limit buckets) -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.2.4</version>
+        </dependency>
+
         <!-- The ImageKit SDK -->
         <dependency>
             <groupId>io.imagekit</groupId>

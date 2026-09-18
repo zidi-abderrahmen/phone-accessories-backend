@@ -1,5 +1,7 @@
 package com.ia.backend.common.security;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,8 +16,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
@@ -28,7 +28,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             "/api/auth/reset-password", "/auth/reset-password"
     );
 
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final Cache<String, Bucket> buckets = Caffeine.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterAccess(Duration.ofMinutes(10))
+            .build();
 
     @Value("${application.security.rate-limit.enabled:true}")
     private boolean rateLimitEnabled;
@@ -45,7 +48,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         String key = resolveClientKey(request);
-        Bucket bucket = buckets.computeIfAbsent(key, k -> newBucket());
+        Bucket bucket = buckets.get(key, k -> newBucket());
 
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
