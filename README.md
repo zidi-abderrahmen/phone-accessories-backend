@@ -5,6 +5,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1?logo=postgresql&logoColor=white)
 ![Swagger](https://img.shields.io/badge/Swagger-OpenAPI%203-85EA2D?logo=swagger&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+![Coverage](https://img.shields.io/badge/Coverage-%E2%89%A5%2045%25%20line-2ea44f)
 
 A production-grade REST API powering a **phone accessories e-commerce** platform. It provides a complete online store backend — product catalog, shopping cart, wishlist, orders, reviews, and user authentication — together with an admin area for managing catalog, users, and store analytics.
 

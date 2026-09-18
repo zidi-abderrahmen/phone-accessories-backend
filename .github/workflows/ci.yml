@@ -47,6 +47,13 @@ jobs:
           cache: 'maven'
       - name: Build and test
         run: ./mvnw clean verify
+      - name: Upload JaCoCo coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          if-no-files-found: ignore
 
     services:
       postgres:
