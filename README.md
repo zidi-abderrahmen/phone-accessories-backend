@@ -1,5 +1,6 @@
 # Phone Accessories Backend
 
+[![CI](https://github.com/zidi-abderrahmen/phone-accessories-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/zidi-abderrahmen/phone-accessories-backend/actions/workflows/ci.yml)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.0-6DB33F?logo=spring&logoColor=white)
 ![Java](https://img.shields.io/badge/Java-21-orange?logo=java&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1?logo=postgresql&logoColor=white)
