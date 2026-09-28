@@ -121,11 +121,11 @@ flowchart LR
     subgraph "Spring Boot App (com.ia.backend)"
         C[Controllers<br/>REST endpoints]
         S[Services<br/>business logic & transactions]
-        S --> C
+        C --> S
         R[Repositories<br/>Spring Data JPA]
-        R --> S
+        S --> R
         M[MapStruct Mappers<br/>DTO ⇄ Entity]
-        M --> S
+        S --> M
     end
 
     subgraph "Cross-cutting (common)"
@@ -273,7 +273,7 @@ Interactive documentation is available through **Swagger UI** in non-production 
 
 ```bash
 git clone https://github.com/zidi-abderrahmen/phone-accessories-backend.git
-cd backend
+cd phone-accessories-backend
 
 # Create your local environment files from the committed templates
 cp src/main/resources/application-dev.yaml.example src/main/resources/application-dev.yaml
@@ -376,7 +376,7 @@ docker build -t phone-accessories-backend .
 docker run -p 10000:10000 --env-file .env.docker phone-accessories-backend
 ```
 
-The image listens on the `PORT` env var. The application default is `8080` (`server.port: ${PORT:8080}` in `application.yaml`); the `Dockerfile` additionally declares `EXPOSE 10000`, which is the port **Render** injects via `PORT` by default. Match the port mapping to the value of `PORT` — e.g. with Render's default the example above uses `10000`.
+The image listens on the `PORT` env var. The application default is `8080` (`server.port: ${PORT:8080}` in `application.yaml`); The application listens on the `PORT` environment variable and defaults to `8080` for local development. In the Render deployment, Render provides `PORT=10000` by default, so the container listens on port `10000`. The Dockerfile declares `EXPOSE 10000` to document the expected container port for this deployment. Match the port mapping to the value of `PORT` — e.g. with Render's default the example above uses `10000`.
 
 ### Environment-driven production profile
 
