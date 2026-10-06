@@ -153,7 +153,11 @@ public class CartService {
     @Transactional
     public void clearCart() {
         User currentUser = userService.getCurrentUserEntity();
-        Long cartId = currentUser.getCart().getId();
+        Long cartId = currentUser.getCart() == null ? null : currentUser.getCart().getId();
+        if (cartId == null) {
+            log.debug("User {} has no cart to clear.", currentUser.getId());
+            return;
+        }
         Cart existingCart = cartRepository.findById(cartId)
                 .orElseThrow(() -> {
                     log.error("Cart not found.");
