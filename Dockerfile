@@ -11,13 +11,13 @@ COPY .mvn .mvn
 RUN chmod +x mvnw
 
 # Download dependencies
-RUN ./mvnw dependency:go-offline -B
+RUN ./mvnw dependency:go-offline -B -P '!dev'
 
 # Copy source code
 COPY src src
 
 # Build the application
-RUN ./mvnw clean package -DskipTests
+RUN ./mvnw clean package -DskipTests -P '!dev'
 
 
 # ---------- Runtime stage ----------
