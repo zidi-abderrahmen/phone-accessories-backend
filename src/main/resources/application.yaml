@@ -37,7 +37,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, metrics
+        include: health, info
   endpoint:
     health:
       show-details: always
+      group:
+        render:
+          include: ping
+          show-details: never

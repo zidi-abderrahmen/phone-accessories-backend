@@ -6,7 +6,7 @@ services:
     branch: main
     autoDeploy: true
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /api/actuator/health
+    healthCheckPath: /api/actuator/health/render
     envVars:
       - key: PROFILE
         value: prod
